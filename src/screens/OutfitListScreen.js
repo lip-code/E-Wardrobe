@@ -4,10 +4,10 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  Image,
   StyleSheet,
   Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
 
@@ -15,6 +15,7 @@ export default function OutfitListScreen({ navigation }) {
   const { state, dispatch } = useWardrobe();
 
   const getClothById = (id) => state.clothes.find((c) => c.id === id);
+  const hasEnoughClothes = state.clothes.length >= 2;
 
   const handleSetToday = (outfitId) => {
     dispatch({ type: ActionTypes.SET_TODAY_OUTFIT, payload: outfitId });
@@ -59,6 +60,8 @@ export default function OutfitListScreen({ navigation }) {
               key={c.id}
               source={{ uri: c.imageUri }}
               style={styles.thumb}
+              contentFit="cover"
+              transition={200}
             />
           ))}
         </View>
@@ -90,6 +93,14 @@ export default function OutfitListScreen({ navigation }) {
         <Text style={styles.subtitle}>共 {state.outfits.length} 套</Text>
       </View>
 
+      {!hasEnoughClothes && (
+        <View style={styles.tipBar}>
+          <Text style={styles.tipText}>
+            💡 至少需要 2 件衣物才能创建搭配，当前有 {state.clothes.length} 件
+          </Text>
+        </View>
+      )}
+
       <FlatList
         data={state.outfits}
         keyExtractor={(item) => item.id}
@@ -97,9 +108,12 @@ export default function OutfitListScreen({ navigation }) {
         renderItem={renderOutfit}
         ListEmptyComponent={
           <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>👗</Text>
             <Text style={styles.emptyText}>还没有搭配方案</Text>
             <Text style={styles.emptyHint}>
-              在衣橱中选择衣物组合搭配吧
+              {hasEnoughClothes
+                ? '在衣橱中选择衣物组合搭配吧'
+                : '先去衣橱添加至少 2 件衣物再来搭配'}
             </Text>
           </View>
         }
@@ -128,6 +142,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginTop: 4,
+  },
+  tipBar: {
+    backgroundColor: '#fffbe6',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ffe58f',
+  },
+  tipText: {
+    fontSize: 13,
+    color: '#ad6800',
   },
   list: {
     padding: 16,
@@ -212,6 +237,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 60,
   },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
   emptyText: {
     fontSize: 16,
     color: '#999',
@@ -220,5 +249,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#bbb',
     marginTop: 8,
+    textAlign: 'center',
   },
 });

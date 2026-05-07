@@ -30,9 +30,24 @@ function TabIcon({ label, focused }) {
   );
 }
 
+const fadeTransition = {
+  animation: 'fade',
+  config: {
+    animation: 'fade',
+    config: {
+      duration: 200,
+    },
+  },
+};
+
 function HomeStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'fade',
+      }}
+    >
       <Stack.Screen name="HomeMain" component={HomeScreen} />
       <Stack.Screen name="ClothDetail" component={ClothDetailScreen} />
     </Stack.Navigator>
@@ -41,7 +56,12 @@ function HomeStack() {
 
 function OutfitStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'fade',
+      }}
+    >
       <Stack.Screen name="OutfitList" component={OutfitListScreen} />
       <Stack.Screen name="OutfitDetail" component={OutfitDetailScreen} />
     </Stack.Navigator>

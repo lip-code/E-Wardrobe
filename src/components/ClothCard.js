@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  Animated,
+  Pressable,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
 
@@ -14,39 +16,69 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_MARGIN = 8;
 const CARD_WIDTH = (SCREEN_WIDTH - CARD_MARGIN * 4) / 2;
 
+const blurhash =
+  '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
+
 export default function ClothCard({ item, onPress }) {
   const { dispatch } = useWardrobe();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handleToggleFavorite = () => {
     dispatch({ type: ActionTypes.TOGGLE_FAVORITE, payload: item.id });
   };
 
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      <Image source={{ uri: item.imageUri }} style={styles.image} />
-      <TouchableOpacity
-        style={styles.heartButton}
-        onPress={handleToggleFavorite}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Text style={styles.heartIcon}>
-          {item.isFavorite ? '❤️' : '🤍'}
-        </Text>
-      </TouchableOpacity>
-      <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>
-          {item.name}
-        </Text>
-        <View style={styles.row}>
-          <View style={styles.categoryTag}>
-            <Text style={styles.categoryText}>{item.category}</Text>
-          </View>
-          <View style={styles.wearBadge}>
-            <Text style={styles.wearText}>穿{item.wearCount}次</Text>
+    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={onPress}>
+      <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }] }]}>
+        <Image
+          source={{ uri: item.imageUri }}
+          style={styles.image}
+          placeholder={{ blurhash }}
+          contentFit="cover"
+          transition={200}
+        />
+        <TouchableOpacity
+          style={styles.heartButton}
+          onPress={handleToggleFavorite}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.heartIcon}>
+            {item.isFavorite ? '❤️' : '🤍'}
+          </Text>
+        </TouchableOpacity>
+        <View style={styles.info}>
+          <Text style={styles.name} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <View style={styles.row}>
+            <View style={styles.categoryTag}>
+              <Text style={styles.categoryText}>{item.category}</Text>
+            </View>
+            <View style={styles.wearBadge}>
+              <Text style={styles.wearText}>穿{item.wearCount}次</Text>
+            </View>
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </Animated.View>
+    </Pressable>
   );
 }
 

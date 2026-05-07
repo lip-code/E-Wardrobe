@@ -5,6 +5,7 @@ import {
   FlatList,
   StyleSheet,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
 import { useWardrobe } from '../store/WardrobeContext';
 import ClothCard from '../components/ClothCard';
@@ -20,6 +21,7 @@ export default function HomeScreen({ navigation }) {
   }, [state.clothes, selectedCategory]);
 
   const todayOutfit = state.outfits.find((o) => o.isTodayOutfit);
+  const isEmpty = state.clothes.length === 0;
 
   return (
     <View style={styles.container}>
@@ -33,19 +35,23 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       {/* Today outfit status */}
-      <View style={styles.todayBar}>
-        <Text style={styles.todayLabel}>
-          {todayOutfit
-            ? `今日穿搭：${todayOutfit.name}`
-            : '今天还没选穿搭哦'}
-        </Text>
-      </View>
+      {!isEmpty && (
+        <View style={styles.todayBar}>
+          <Text style={styles.todayLabel}>
+            {todayOutfit
+              ? `今日穿搭：${todayOutfit.name}`
+              : '今天还没选穿搭哦'}
+          </Text>
+        </View>
+      )}
 
       {/* Category tabs */}
-      <CategoryTabs
-        selected={selectedCategory}
-        onSelect={setSelectedCategory}
-      />
+      {!isEmpty && (
+        <CategoryTabs
+          selected={selectedCategory}
+          onSelect={setSelectedCategory}
+        />
+      )}
 
       {/* Cloth list */}
       <FlatList
@@ -53,7 +59,7 @@ export default function HomeScreen({ navigation }) {
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, isEmpty && styles.emptyList]}
         renderItem={({ item }) => (
           <ClothCard
             item={item}
@@ -63,9 +69,25 @@ export default function HomeScreen({ navigation }) {
           />
         )}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>这个分类还没有衣物</Text>
-          </View>
+          isEmpty ? (
+            <View style={styles.emptyGuide}>
+              <Text style={styles.emptyIcon}>👕</Text>
+              <Text style={styles.emptyTitle}>衣橱还是空的</Text>
+              <Text style={styles.emptyHint}>
+                添加你的第一件单品，开始管理你的穿搭吧
+              </Text>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => navigation.navigate('AddCloth')}
+              >
+                <Text style={styles.addButtonText}>+ 添加第一件单品</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyCategory}>
+              <Text style={styles.emptyCategoryText}>这个分类还没有衣物</Text>
+            </View>
+          )
         }
       />
     </View>
@@ -109,13 +131,56 @@ const styles = StyleSheet.create({
   list: {
     paddingBottom: 100,
   },
-  empty: {
+  emptyList: {
+    flex: 1,
+  },
+  emptyGuide: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    paddingBottom: 80,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  emptyHint: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  addButton: {
+    backgroundColor: '#4a6fa5',
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 24,
+    elevation: 2,
+    shadowColor: '#4a6fa5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyCategory: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 60,
   },
-  emptyText: {
+  emptyCategoryText: {
     fontSize: 14,
     color: '#999',
   },

@@ -2,11 +2,11 @@ import React from 'react';
 import {
   View,
   Text,
-  Image,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useWardrobe } from '../store/WardrobeContext';
 
 export default function OutfitDetailScreen({ route, navigation }) {
@@ -47,7 +47,12 @@ export default function OutfitDetailScreen({ route, navigation }) {
               navigation.navigate('ClothDetail', { clothId: cloth.id })
             }
           >
-            <Image source={{ uri: cloth.imageUri }} style={styles.clothImage} />
+            <Image
+              source={{ uri: cloth.imageUri }}
+              style={styles.clothImage}
+              contentFit="cover"
+              transition={200}
+            />
             <Text style={styles.clothName}>{cloth.name}</Text>
             <Text style={styles.clothCategory}>{cloth.category}</Text>
           </TouchableOpacity>

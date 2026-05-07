@@ -2,12 +2,12 @@ import React, { useMemo } from 'react';
 import {
   View,
   Text,
-  Image,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
   Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
 import WearCalendar from '../components/WearCalendar';
@@ -59,7 +59,12 @@ export default function ClothDetailScreen({ route, navigation }) {
 
   return (
     <ScrollView style={styles.container}>
-      <Image source={{ uri: cloth.imageUri }} style={styles.image} />
+      <Image
+        source={{ uri: cloth.imageUri }}
+        style={styles.image}
+        contentFit="cover"
+        transition={300}
+      />
 
       <View style={styles.content}>
         <View style={styles.header}>
@@ -130,6 +135,8 @@ export default function ClothDetailScreen({ route, navigation }) {
                   <Image
                     source={{ uri: c.imageUri }}
                     style={styles.recommendImage}
+                    contentFit="cover"
+                    transition={200}
                   />
                   <Text style={styles.recommendName} numberOfLines={1}>
                     {c.name}
