@@ -1,9 +1,8 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   ScrollView,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -30,14 +29,6 @@ export default function ClothDetailScreen({ route, navigation }) {
   const { state, dispatch } = useWardrobe();
 
   const cloth = state.clothes.find((c) => c.id === clothId);
-  const clothCategory = cloth?.category;
-
-  const recommendedClothes = useMemo(() => {
-    if (!clothCategory) return [];
-    return state.clothes
-      .filter((c) => c.id !== clothId && c.category !== clothCategory)
-      .slice(0, 4);
-  }, [state.clothes, clothId, clothCategory]);
 
   if (state.isBootstrapping) {
     return (
@@ -107,12 +98,6 @@ export default function ClothDetailScreen({ route, navigation }) {
         >
           <Text style={styles.backArrow}>‹</Text>
         </TouchableOpacity>
-        {/* Favorite badge */}
-        {cloth.isFavorite && (
-          <View style={styles.favBadge}>
-            <Text>♥</Text>
-          </View>
-        )}
       </View>
 
       <View style={styles.content}>
@@ -163,46 +148,23 @@ export default function ClothDetailScreen({ route, navigation }) {
           <Text style={styles.wearButtonText}>记录今日穿着</Text>
         </TouchableOpacity>
 
-        {/* Recommended */}
-        {recommendedClothes.length > 0 && (
-          <View style={styles.recommendSection}>
-            <Text style={styles.recommendTitle}>推荐搭配</Text>
-            <FlatList
-              horizontal
-              data={recommendedClothes}
-              keyExtractor={(item) => item.id}
-              showsHorizontalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.recommendCard}
-                  onPress={() =>
-                    navigation.push('ClothDetail', { clothId: item.id })
-                  }
-                  activeOpacity={0.8}
-                >
-                  <Image
-                    source={{ uri: item.imageUri }}
-                    style={styles.recommendImage}
-                    contentFit="cover"
-                    transition={200}
-                  />
-                  <Text style={styles.recommendName} numberOfLines={1}>
-                    {item.name}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        )}
-
-        {/* Delete button */}
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={handleDelete}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.deleteButtonText}>删除此衣物</Text>
-        </TouchableOpacity>
+        {/* Edit & Delete buttons */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => navigation.navigate('AddCloth', { clothId: cloth.id })}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.editButtonText}>编辑</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.deleteButtonText}>删除此衣物</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -253,18 +215,6 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     marginLeft: -2,
     fontWeight: '300',
-  },
-  favBadge: {
-    position: 'absolute',
-    top: 56,
-    right: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 18,
   },
   content: {
     padding: 20,
@@ -399,40 +349,30 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
   },
-  recommendSection: {
-    marginBottom: 24,
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 40,
   },
-  recommendTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#1A1F36',
-    marginBottom: 14,
-    letterSpacing: -0.4,
+  editButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 20,
+    backgroundColor: '#2C3E6B',
+    alignItems: 'center',
   },
-  recommendCard: {
-    marginRight: 12,
-    width: 100,
-  },
-  recommendImage: {
-    width: 100,
-    height: 126,
-    borderRadius: 16,
-    backgroundColor: '#F0EEE9',
-  },
-  recommendName: {
-    fontSize: 12,
-    color: '#6B6F8E',
-    marginTop: 7,
-    textAlign: 'center',
-    fontWeight: '600',
+  editButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
   },
   deleteButton: {
+    flex: 1,
     paddingVertical: 16,
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: '#FFCDD2',
     alignItems: 'center',
-    marginBottom: 40,
     backgroundColor: '#FFF5F5',
   },
   deleteButtonText: {

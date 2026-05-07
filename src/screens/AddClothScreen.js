@@ -21,19 +21,21 @@ function isValidPrice(v) {
   return /^\d+(\.\d{1,2})?$/.test(v);
 }
 
-export default function AddClothScreen({ navigation }) {
+export default function AddClothScreen({ route, navigation }) {
   const { state, dispatch } = useWardrobe();
+  const clothId = route.params?.clothId;
+  const editingCloth = clothId ? state.clothes.find((c) => c.id === clothId) : null;
 
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('上衣');
-  const [color, setColor] = useState('白色');
-  const [season, setSeason] = useState('四季');
-  const [scene, setScene] = useState('休闲');
-  const [imageUri, setImageUri] = useState(null);
-  const [brand, setBrand] = useState('');
-  const [price, setPrice] = useState('');
-  const [material, setMaterial] = useState('');
-  const [notes, setNotes] = useState('');
+  const [name, setName] = useState(editingCloth?.name || '');
+  const [category, setCategory] = useState(editingCloth?.category || '上衣');
+  const [color, setColor] = useState(editingCloth?.color || '白色');
+  const [season, setSeason] = useState(editingCloth?.season || '四季');
+  const [scene, setScene] = useState(editingCloth?.scene || '休闲');
+  const [imageUri, setImageUri] = useState(editingCloth?.imageUri || null);
+  const [brand, setBrand] = useState(editingCloth?.brand || '');
+  const [price, setPrice] = useState(editingCloth?.price != null ? String(editingCloth.price) : '');
+  const [material, setMaterial] = useState(editingCloth?.material || '');
+  const [notes, setNotes] = useState(editingCloth?.notes || '');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
@@ -59,7 +61,7 @@ export default function AddClothScreen({ navigation }) {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [3, 4],
       quality: 0.8,
@@ -98,33 +100,54 @@ export default function AddClothScreen({ navigation }) {
       return;
     }
 
-    const newCloth = {
-      id: Crypto.randomUUID(),
-      name: name.trim() || category,
-      category,
-      color,
-      scene,
-      season,
-      imageUri,
-      brand: brand.trim() || undefined,
-      purchaseDate: new Date().toISOString().split('T')[0],
-      price: price ? Number(price) : undefined,
-      material: material.trim() || undefined,
-      wearCount: 0,
-      wearHistory: [],
-      notes: notes.trim() || undefined,
-    };
-
-    dispatch({ type: ActionTypes.ADD_CLOTH, payload: newCloth });
-    Alert.alert('成功', '衣物已添加到衣橱！', [
-      { text: '确定', onPress: () => navigation.goBack() },
-    ]);
+    if (editingCloth) {
+      dispatch({
+        type: ActionTypes.UPDATE_CLOTH,
+        payload: {
+          id: clothId,
+          name: name.trim() || category,
+          category,
+          color,
+          scene,
+          season,
+          imageUri,
+          brand: brand.trim() || undefined,
+          price: price ? Number(price) : undefined,
+          material: material.trim() || undefined,
+          notes: notes.trim() || undefined,
+        },
+      });
+      Alert.alert('成功', '衣物信息已更新！', [
+        { text: '确定', onPress: () => navigation.goBack() },
+      ]);
+    } else {
+      const newCloth = {
+        id: Crypto.randomUUID(),
+        name: name.trim() || category,
+        category,
+        color,
+        scene,
+        season,
+        imageUri,
+        brand: brand.trim() || undefined,
+        purchaseDate: new Date().toISOString().split('T')[0],
+        price: price ? Number(price) : undefined,
+        material: material.trim() || undefined,
+        wearCount: 0,
+        wearHistory: [],
+        notes: notes.trim() || undefined,
+      };
+      dispatch({ type: ActionTypes.ADD_CLOTH, payload: newCloth });
+      Alert.alert('成功', '衣物已添加到衣橱！', [
+        { text: '确定', onPress: () => navigation.goBack() },
+      ]);
+    }
   };
 
   return (
     <View style={{ flex: 1 }}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>添加衣物</Text>
+      <Text style={styles.title}>{editingCloth ? '编辑衣物' : '添加衣物'}</Text>
 
       {/* Image section */}
       <View style={styles.imageSection}>
@@ -331,7 +354,7 @@ export default function AddClothScreen({ navigation }) {
 
       {/* Save button */}
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>保存到衣橱</Text>
+        <Text style={styles.saveButtonText}>{editingCloth ? '保存修改' : '保存到衣橱'}</Text>
       </TouchableOpacity>
     </ScrollView>
 
