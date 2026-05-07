@@ -89,8 +89,20 @@ export default function OutfitListScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>我的搭配</Text>
-        <Text style={styles.subtitle}>共 {state.outfits.length} 套</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.title}>我的搭配</Text>
+            <Text style={styles.subtitle}>共 {state.outfits.length} 套</Text>
+          </View>
+          {hasEnoughClothes && (
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => navigation.navigate('CreateOutfit')}
+            >
+              <Text style={styles.createButtonText}>+ 创建搭配</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {!hasEnoughClothes && (
@@ -133,6 +145,11 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     backgroundColor: '#fff',
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -142,6 +159,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginTop: 4,
+  },
+  createButton: {
+    backgroundColor: '#4a6fa5',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  createButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   tipBar: {
     backgroundColor: '#fffbe6',

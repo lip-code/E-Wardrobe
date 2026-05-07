@@ -9,6 +9,7 @@ import ClothDetailScreen from '../screens/ClothDetailScreen';
 import AddClothScreen from '../screens/AddClothScreen';
 import OutfitListScreen from '../screens/OutfitListScreen';
 import OutfitDetailScreen from '../screens/OutfitDetailScreen';
+import CreateOutfitScreen from '../screens/CreateOutfitScreen';
 import StatsScreen from '../screens/StatsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import FloatingButton from '../components/FloatingButton';
@@ -64,6 +65,7 @@ function OutfitStack() {
     >
       <Stack.Screen name="OutfitList" component={OutfitListScreen} />
       <Stack.Screen name="OutfitDetail" component={OutfitDetailScreen} />
+      <Stack.Screen name="CreateOutfit" component={CreateOutfitScreen} />
     </Stack.Navigator>
   );
 }
