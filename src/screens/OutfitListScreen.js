@@ -11,6 +11,15 @@ import { Image } from 'expo-image';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
 
+const CATEGORY_ORDER = ['上衣', '外套', '裤子', '鞋子', '配饰'];
+const CATEGORY_ICONS = {
+  '上衣': '👕',
+  '外套': '🧥',
+  '裤子': '👖',
+  '鞋子': '👟',
+  '配饰': '👜',
+};
+
 export default function OutfitListScreen({ navigation }) {
   const { state, dispatch } = useWardrobe();
 
@@ -35,13 +44,22 @@ export default function OutfitListScreen({ navigation }) {
   };
 
   const renderOutfit = ({ item }) => {
-    const clothThumbs = item.clothIds
-      .map(getClothById)
-      .filter(Boolean)
-      .slice(0, 4);
+    const clothes = item.clothIds.map(getClothById).filter(Boolean);
+
+    // Group by category in display order
+    const grouped = CATEGORY_ORDER
+      .map((cat) => ({
+        category: cat,
+        items: clothes.filter((c) => c.category === cat),
+      }))
+      .filter((g) => g.items.length > 0);
 
     return (
-      <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
+        activeOpacity={0.85}
+      >
         <View style={styles.cardHeader}>
           <View style={styles.cardTitleRow}>
             <Text style={styles.cardTitle}>{item.name}</Text>
@@ -54,18 +72,39 @@ export default function OutfitListScreen({ navigation }) {
           <Text style={styles.cardDate}>{item.date}</Text>
         </View>
 
-        <View style={styles.thumbRow}>
-          {clothThumbs.map((c) => (
-            <Image
-              key={c.id}
-              source={{ uri: c.imageUri }}
-              style={styles.thumb}
-              contentFit="cover"
-              transition={200}
-            />
+        {/* Vertical outfit display */}
+        <View style={styles.outfitPreview}>
+          {grouped.map((group) => (
+            <View key={group.category} style={styles.categoryRow}>
+              <View style={styles.categoryLabel}>
+                <Text style={styles.categoryIcon}>
+                  {CATEGORY_ICONS[group.category]}
+                </Text>
+                <Text style={styles.categoryName}>{group.category}</Text>
+              </View>
+              <View style={styles.categoryItems}>
+                {group.items.map((cloth) => (
+                  <View key={cloth.id} style={styles.clothItem}>
+                    <Image
+                      source={{ uri: cloth.imageUri }}
+                      style={styles.clothImage}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                    <View style={styles.clothInfo}>
+                      <Text style={styles.clothName} numberOfLines={1}>
+                        {cloth.name}
+                      </Text>
+                      <Text style={styles.clothColor}>{cloth.color}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
           ))}
         </View>
 
+        {/* Actions */}
         <View style={styles.cardActions}>
           <TouchableOpacity
             style={styles.actionButton}
@@ -82,7 +121,7 @@ export default function OutfitListScreen({ navigation }) {
             <Text style={[styles.actionText, styles.deleteText]}>删除</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -188,20 +227,20 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   cardTitleRow: {
     flexDirection: 'row',
@@ -228,20 +267,65 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
   },
-  thumbRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
+  outfitPreview: {
+    gap: 10,
+    marginBottom: 14,
   },
-  thumb: {
-    width: 60,
-    height: 75,
-    borderRadius: 8,
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  categoryLabel: {
+    width: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  categoryIcon: {
+    fontSize: 16,
+  },
+  categoryName: {
+    fontSize: 12,
+    color: '#888',
+    fontWeight: '500',
+  },
+  categoryItems: {
+    flex: 1,
+    gap: 6,
+  },
+  clothItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  clothImage: {
+    width: 56,
+    height: 56,
     backgroundColor: '#f0f0f0',
+  },
+  clothInfo: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  clothName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+  },
+  clothColor: {
+    fontSize: 11,
+    color: '#999',
+    marginTop: 2,
   },
   cardActions: {
     flexDirection: 'row',
     gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingTop: 12,
   },
   actionButton: {
     flex: 1,
