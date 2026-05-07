@@ -157,6 +157,8 @@ export const MOCK_CLOTHES = [
   },
 ];
 
+export const OUTFIT_TYPES = ['休闲', '正装', '运动', '约会', '居家'];
+
 export const MOCK_OUTFITS = [
   {
     id: 'o1',
@@ -164,6 +166,7 @@ export const MOCK_OUTFITS = [
     clothIds: ['1', '2', '4'],
     date: '2026-05-01',
     isTodayOutfit: true,
+    type: '休闲',
   },
   {
     id: 'o2',
@@ -171,5 +174,6 @@ export const MOCK_OUTFITS = [
     clothIds: ['3', '6', '7'],
     date: '2026-04-28',
     isTodayOutfit: false,
+    type: '正装',
   },
 ];

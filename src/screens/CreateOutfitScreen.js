@@ -13,6 +13,7 @@ import { Image } from 'expo-image';
 import * as Crypto from 'expo-crypto';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
+import { OUTFIT_TYPES } from '../utils/mockData';
 
 const BASE_CATEGORIES = ['上衣', '外套', '裤子', '鞋子', '配饰'];
 const CATEGORY_ICONS = {
@@ -35,6 +36,7 @@ export default function CreateOutfitScreen({ route, navigation }) {
   const [selectedIds, setSelectedIds] = useState(
     editingOutfit?.clothIds || []
   );
+  const [outfitType, setOutfitType] = useState(editingOutfit?.type || '休闲');
   const [activeCategory, setActiveCategory] = useState('上衣');
 
   const categoryOrder = useMemo(
@@ -86,6 +88,7 @@ export default function CreateOutfitScreen({ route, navigation }) {
           id: editId,
           name: name.trim(),
           clothIds: selectedIds,
+          type: outfitType,
         },
       });
       Alert.alert('成功', '搭配已更新！', [
@@ -98,6 +101,7 @@ export default function CreateOutfitScreen({ route, navigation }) {
         clothIds: selectedIds,
         date: new Date().toISOString().split('T')[0],
         isTodayOutfit: false,
+        type: outfitType,
       };
       dispatch({ type: ActionTypes.ADD_OUTFIT, payload: newOutfit });
       Alert.alert('成功', '搭配已创建！', [
@@ -130,6 +134,23 @@ export default function CreateOutfitScreen({ route, navigation }) {
           placeholder="给这套搭配起个名字"
           placeholderTextColor="#bbb"
         />
+      </View>
+
+      {/* Type selector */}
+      <View style={styles.typeSection}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeRow}>
+          {OUTFIT_TYPES.map((t) => (
+            <TouchableOpacity
+              key={t}
+              style={[styles.typeChip, outfitType === t && styles.activeTypeChip]}
+              onPress={() => setOutfitType(t)}
+            >
+              <Text style={[styles.typeChipText, outfitType === t && styles.activeTypeChipText]}>
+                {t}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Selected preview */}
@@ -290,6 +311,33 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
     paddingVertical: 8,
+  },
+  typeSection: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  typeRow: {
+    gap: 8,
+  },
+  typeChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#f5f5f5',
+  },
+  activeTypeChip: {
+    backgroundColor: '#4a6fa5',
+  },
+  typeChipText: {
+    fontSize: 13,
+    color: '#666',
+  },
+  activeTypeChipText: {
+    color: '#fff',
+    fontWeight: '500',
   },
   previewSection: {
     backgroundColor: '#f8f9ff',

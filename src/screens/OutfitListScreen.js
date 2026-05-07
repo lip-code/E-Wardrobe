@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import PropTypes from 'prop-types';
 import * as Crypto from 'expo-crypto';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
+import { OUTFIT_TYPES } from '../utils/mockData';
 
 const OutfitCard = React.memo(function OutfitCard({
   outfit,
@@ -46,6 +47,7 @@ const OutfitCard = React.memo(function OutfitCard({
           </Text>
           <Text style={styles.cardMeta}>
             {outfit.clothIds.length} 件单品 · {outfit.date}
+            {outfit.type ? ` · ${outfit.type}` : ''}
           </Text>
         </View>
         <View style={styles.clothCount}>
@@ -110,6 +112,7 @@ OutfitCard.propTypes = {
     clothIds: PropTypes.arrayOf(PropTypes.string).isRequired,
     date: PropTypes.string.isRequired,
     isTodayOutfit: PropTypes.bool.isRequired,
+    type: PropTypes.string,
   }).isRequired,
   clothes: PropTypes.array.isRequired,
   onPress: PropTypes.func.isRequired,
@@ -121,8 +124,14 @@ OutfitCard.propTypes = {
 
 export default function OutfitListScreen({ navigation }) {
   const { state, dispatch } = useWardrobe();
+  const [activeType, setActiveType] = useState('全部');
 
   const hasEnoughClothes = state.clothes.length >= 2;
+
+  const filteredOutfits = useMemo(() => {
+    if (activeType === '全部') return state.outfits;
+    return state.outfits.filter((o) => o.type === activeType);
+  }, [state.outfits, activeType]);
 
   const handleSetToday = useCallback(
     (outfitId) => {
@@ -191,6 +200,23 @@ export default function OutfitListScreen({ navigation }) {
         </Text>
       </View>
 
+      {/* Type filter tabs */}
+      <View style={styles.typeFilter}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeFilterRow}>
+          {['全部', ...OUTFIT_TYPES].map((t) => (
+            <TouchableOpacity
+              key={t}
+              style={[styles.typeFilterChip, activeType === t && styles.activeTypeFilterChip]}
+              onPress={() => setActiveType(t)}
+            >
+              <Text style={[styles.typeFilterText, activeType === t && styles.activeTypeFilterText]}>
+                {t}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       {!hasEnoughClothes && (
         <View style={styles.tipBar}>
           <Text style={styles.tipIcon}>💡</Text>
@@ -201,7 +227,7 @@ export default function OutfitListScreen({ navigation }) {
       )}
 
       <FlatList
-        data={state.outfits}
+        data={filteredOutfits}
         keyExtractor={keyExtractor}
         contentContainerStyle={styles.list}
         renderItem={renderItem}
@@ -254,6 +280,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9B9EB5',
     marginTop: 3,
+    fontWeight: '500',
+  },
+  typeFilter: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#e8e8e8',
+  },
+  typeFilterRow: {
+    gap: 8,
+  },
+  typeFilterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#f5f5f5',
+  },
+  activeTypeFilterChip: {
+    backgroundColor: '#333',
+  },
+  typeFilterText: {
+    fontSize: 13,
+    color: '#666',
+  },
+  activeTypeFilterText: {
+    color: '#fff',
     fontWeight: '500',
   },
   fab: {

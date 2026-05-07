@@ -59,7 +59,7 @@ export default function OutfitDetailScreen({ route, navigation }) {
             </View>
           )}
         </View>
-        <Text style={styles.date}>{outfit.date}</Text>
+        <Text style={styles.date}>{outfit.date}{outfit.type ? ` · ${outfit.type}` : ''}</Text>
         <Text style={styles.count}>{clothes.length} 件单品</Text>
       </View>
 
