@@ -3,9 +3,11 @@ import {
   View,
   Text,
   ScrollView,
+  FlatList,
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useWardrobe } from '../store/WardrobeContext';
@@ -17,13 +19,22 @@ export default function ClothDetailScreen({ route, navigation }) {
   const { state, dispatch } = useWardrobe();
 
   const cloth = state.clothes.find((c) => c.id === clothId);
+  const clothCategory = cloth?.category;
 
   const recommendedClothes = useMemo(() => {
-    if (!cloth) return [];
+    if (!clothCategory) return [];
     return state.clothes
-      .filter((c) => c.id !== clothId && c.category !== cloth.category)
+      .filter((c) => c.id !== clothId && c.category !== clothCategory)
       .slice(0, 4);
-  }, [state.clothes, clothId, cloth]);
+  }, [state.clothes, clothId, clothCategory]);
+
+  if (state.isBootstrapping) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#4a6fa5" />
+      </View>
+    );
+  }
 
   if (!cloth) {
     return (
@@ -69,15 +80,6 @@ export default function ClothDetailScreen({ route, navigation }) {
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.name}>{cloth.name}</Text>
-          <TouchableOpacity
-            onPress={() =>
-              dispatch({ type: ActionTypes.TOGGLE_FAVORITE, payload: clothId })
-            }
-          >
-            <Text style={styles.heart}>
-              {cloth.isFavorite ? '❤️' : '🤍'}
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* Info grid */}
@@ -123,27 +125,30 @@ export default function ClothDetailScreen({ route, navigation }) {
         {recommendedClothes.length > 0 && (
           <View style={styles.recommendSection}>
             <Text style={styles.recommendTitle}>推荐搭配</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {recommendedClothes.map((c) => (
+            <FlatList
+              horizontal
+              data={recommendedClothes}
+              keyExtractor={(item) => item.id}
+              showsHorizontalScrollIndicator={false}
+              renderItem={({ item }) => (
                 <TouchableOpacity
-                  key={c.id}
                   style={styles.recommendCard}
                   onPress={() =>
-                    navigation.push('ClothDetail', { clothId: c.id })
+                    navigation.push('ClothDetail', { clothId: item.id })
                   }
                 >
                   <Image
-                    source={{ uri: c.imageUri }}
+                    source={{ uri: item.imageUri }}
                     style={styles.recommendImage}
                     contentFit="cover"
                     transition={200}
                   />
                   <Text style={styles.recommendName} numberOfLines={1}>
-                    {c.name}
+                    {item.name}
                   </Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              )}
+            />
           </View>
         )}
 
@@ -194,9 +199,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#333',
     flex: 1,
-  },
-  heart: {
-    fontSize: 28,
   },
   infoGrid: {
     flexDirection: 'row',

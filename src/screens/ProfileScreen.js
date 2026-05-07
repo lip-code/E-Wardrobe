@@ -36,9 +36,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>我的</Text>
-      </View>
+      <View style={styles.header} />
 
       {/* Profile card */}
       <View style={styles.profileCard}>
@@ -102,15 +100,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
   },
   header: {
-    paddingHorizontal: 16,
     paddingTop: 60,
-    paddingBottom: 12,
     backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
   },
   profileCard: {
     backgroundColor: '#fff',

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,68 +6,98 @@ import {
   StyleSheet,
   StatusBar,
   TouchableOpacity,
+  Dimensions,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { useWardrobe } from '../store/WardrobeContext';
+import { ActionTypes } from '../store/wardrobeReducer';
 import ClothCard from '../components/ClothCard';
 import CategoryTabs from '../components/CategoryTabs';
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_MARGIN = 8;
+const CARD_WIDTH = (SCREEN_WIDTH - CARD_MARGIN * 4) / 2;
+const ITEM_HEIGHT = CARD_WIDTH * 1.2 + 55;
+
 export default function HomeScreen({ navigation }) {
-  const { state } = useWardrobe();
+  const { state, dispatch } = useWardrobe();
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const filteredClothes = useMemo(() => {
     if (selectedCategory === 'all') return state.clothes;
     return state.clothes.filter((c) => c.category === selectedCategory);
   }, [state.clothes, selectedCategory]);
 
-  const todayOutfit = state.outfits.find((o) => o.isTodayOutfit);
   const isEmpty = state.clothes.length === 0;
+
+  const handleAddCategory = useCallback(() => {
+    setShowAddCategory(true);
+    setNewCategoryName('');
+  }, []);
+
+  const handleConfirmAddCategory = useCallback(() => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    if (state.customCategories.includes(name)) {
+      Alert.alert('提示', '该分类已存在');
+      return;
+    }
+    dispatch({ type: ActionTypes.ADD_CATEGORY, payload: name });
+    setSelectedCategory(name);
+    setShowAddCategory(false);
+    setNewCategoryName('');
+  }, [newCategoryName, state.customCategories, dispatch]);
+
+  const keyExtractor = useCallback((item) => item.id, []);
+
+  const getItemLayout = useCallback(
+    (_, index) => ({
+      length: ITEM_HEIGHT,
+      offset: ITEM_HEIGHT * Math.floor(index / 2),
+      index,
+    }),
+    []
+  );
+
+  const renderItem = useCallback(
+    ({ item }) => (
+      <ClothCard
+        item={item}
+        onPress={() => navigation.navigate('ClothDetail', { clothId: item.id })}
+      />
+    ),
+    [navigation]
+  );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>我的衣橱</Text>
-        <Text style={styles.subtitle}>
-          共 {state.clothes.length} 件
-        </Text>
-      </View>
-
-      {/* Today outfit status */}
-      {!isEmpty && (
-        <View style={styles.todayBar}>
-          <Text style={styles.todayLabel}>
-            {todayOutfit
-              ? `今日穿搭：${todayOutfit.name}`
-              : '今天还没选穿搭哦'}
-          </Text>
-        </View>
-      )}
+      <View style={styles.header} />
 
       {/* Category tabs */}
       {!isEmpty && (
         <CategoryTabs
           selected={selectedCategory}
           onSelect={setSelectedCategory}
+          customCategories={state.customCategories}
+          onAdd={handleAddCategory}
         />
       )}
 
       {/* Cloth list */}
       <FlatList
         data={filteredClothes}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         numColumns={2}
         columnWrapperStyle={styles.row}
         contentContainerStyle={[styles.list, isEmpty && styles.emptyList]}
-        renderItem={({ item }) => (
-          <ClothCard
-            item={item}
-            onPress={() =>
-              navigation.navigate('ClothDetail', { clothId: item.id })
-            }
-          />
-        )}
+        getItemLayout={getItemLayout}
+        renderItem={renderItem}
         ListEmptyComponent={
           isEmpty ? (
             <View style={styles.emptyGuide}>
@@ -90,6 +120,45 @@ export default function HomeScreen({ navigation }) {
           )
         }
       />
+
+      {/* Add Category Modal */}
+      <Modal
+        visible={showAddCategory}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddCategory(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowAddCategory(false)}
+        >
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>新建分类</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newCategoryName}
+              onChangeText={setNewCategoryName}
+              placeholder="输入分类名称"
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setShowAddCategory(false)}
+              >
+                <Text style={styles.modalCancelText}>取消</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirm}
+                onPress={handleConfirmAddCategory}
+              >
+                <Text style={styles.modalConfirmText}>确定</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -100,29 +169,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
   },
   header: {
-    paddingHorizontal: 16,
     paddingTop: 60,
-    paddingBottom: 8,
     backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 4,
-  },
-  todayBar: {
-    backgroundColor: '#fff3e0',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  todayLabel: {
-    fontSize: 14,
-    color: '#e65100',
   },
   row: {
     justifyContent: 'space-between',
@@ -183,5 +231,58 @@ const styles = StyleSheet.create({
   emptyCategoryText: {
     fontSize: 14,
     color: '#999',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 24,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#333',
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  modalCancel: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  modalCancelText: {
+    fontSize: 15,
+    color: '#999',
+  },
+  modalConfirm: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#4a6fa5',
+  },
+  modalConfirmText: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: '600',
   },
 });

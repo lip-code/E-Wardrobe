@@ -3,7 +3,9 @@ import { MOCK_CLOTHES, MOCK_OUTFITS } from '../utils/mockData';
 export const initialState = {
   clothes: MOCK_CLOTHES,
   outfits: MOCK_OUTFITS,
-  isLoading: false,
+  customCategories: [],
+  isBootstrapping: true,
+  isSaving: false,
 };
 
 export const ActionTypes = {
@@ -18,7 +20,10 @@ export const ActionTypes = {
   UPDATE_OUTFIT: 'UPDATE_OUTFIT',
   DELETE_OUTFIT: 'DELETE_OUTFIT',
   SET_TODAY_OUTFIT: 'SET_TODAY_OUTFIT',
-  SET_LOADING: 'SET_LOADING',
+  SET_BOOTSTRAPPING: 'SET_BOOTSTRAPPING',
+  SET_SAVING: 'SET_SAVING',
+  ADD_CATEGORY: 'ADD_CATEGORY',
+  SET_CUSTOM_CATEGORIES: 'SET_CUSTOM_CATEGORIES',
 };
 
 export function wardrobeReducer(state, action) {
@@ -99,8 +104,17 @@ export function wardrobeReducer(state, action) {
       };
     }
 
-    case ActionTypes.SET_LOADING:
-      return { ...state, isLoading: action.payload };
+    case ActionTypes.SET_BOOTSTRAPPING:
+      return { ...state, isBootstrapping: action.payload };
+
+    case ActionTypes.SET_SAVING:
+      return { ...state, isSaving: action.payload };
+
+    case ActionTypes.ADD_CATEGORY:
+      return { ...state, customCategories: [...state.customCategories, action.payload] };
+
+    case ActionTypes.SET_CUSTOM_CATEGORIES:
+      return { ...state, customCategories: action.payload };
 
     default:
       return state;

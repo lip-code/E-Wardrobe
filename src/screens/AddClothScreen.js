@@ -7,16 +7,22 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  Platform,
+  Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import * as Crypto from 'expo-crypto';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
 import { CATEGORIES, COLORS, SEASONS, SCENES } from '../utils/constants';
 
+function isValidPrice(v) {
+  if (v === '' || v == null) return true;
+  return /^\d+(\.\d{1,2})?$/.test(v);
+}
+
 export default function AddClothScreen({ navigation }) {
-  const { dispatch } = useWardrobe();
+  const { state, dispatch } = useWardrobe();
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState('上衣');
@@ -28,6 +34,22 @@ export default function AddClothScreen({ navigation }) {
   const [price, setPrice] = useState('');
   const [material, setMaterial] = useState('');
   const [notes, setNotes] = useState('');
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  const handleConfirmAddCategory = () => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    if (state.customCategories.includes(name)) {
+      setCategory(name);
+      setShowAddCategory(false);
+      return;
+    }
+    dispatch({ type: ActionTypes.ADD_CATEGORY, payload: name });
+    setCategory(name);
+    setShowAddCategory(false);
+    setNewCategoryName('');
+  };
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -37,7 +59,7 @@ export default function AddClothScreen({ navigation }) {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType.Images,
       allowsEditing: true,
       aspect: [3, 4],
       quality: 0.8,
@@ -67,18 +89,18 @@ export default function AddClothScreen({ navigation }) {
   };
 
   const handleSave = () => {
-    if (!name.trim()) {
-      Alert.alert('提示', '请输入衣物名称');
-      return;
-    }
     if (!imageUri) {
       Alert.alert('提示', '请添加一张图片');
       return;
     }
+    if (!isValidPrice(price)) {
+      Alert.alert('提示', '请输入合法价格（最多两位小数）');
+      return;
+    }
 
     const newCloth = {
-      id: Date.now().toString(),
-      name: name.trim(),
+      id: Crypto.randomUUID(),
+      name: name.trim() || category,
       category,
       color,
       scene,
@@ -90,7 +112,6 @@ export default function AddClothScreen({ navigation }) {
       material: material.trim() || undefined,
       wearCount: 0,
       wearHistory: [],
-      isFavorite: false,
       notes: notes.trim() || undefined,
     };
 
@@ -101,6 +122,7 @@ export default function AddClothScreen({ navigation }) {
   };
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>添加衣物</Text>
 
@@ -125,12 +147,12 @@ export default function AddClothScreen({ navigation }) {
 
       {/* Name */}
       <View style={styles.field}>
-        <Text style={styles.label}>名称 *</Text>
+        <Text style={styles.label}>名称</Text>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={setName}
-          placeholder="输入衣物名称"
+          placeholder={`留空默认使用「${category}」`}
         />
       </View>
 
@@ -157,6 +179,31 @@ export default function AddClothScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
           ))}
+          {state.customCategories.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[
+                styles.optionButton,
+                category === cat && styles.activeOption,
+              ]}
+              onPress={() => setCategory(cat)}
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  category === cat && styles.activeOptionText,
+                ]}
+              >
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={styles.addCategoryButton}
+            onPress={() => setShowAddCategory(true)}
+          >
+            <Text style={styles.addCategoryText}>+ 新建</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -287,6 +334,46 @@ export default function AddClothScreen({ navigation }) {
         <Text style={styles.saveButtonText}>保存到衣橱</Text>
       </TouchableOpacity>
     </ScrollView>
+
+    {/* Add Category Modal */}
+    <Modal
+      visible={showAddCategory}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowAddCategory(false)}
+    >
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setShowAddCategory(false)}
+      >
+        <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+          <Text style={styles.modalTitle}>新建分类</Text>
+          <TextInput
+            style={styles.modalInput}
+            value={newCategoryName}
+            onChangeText={setNewCategoryName}
+            placeholder="输入分类名称"
+            autoFocus
+          />
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={() => setShowAddCategory(false)}
+            >
+              <Text style={styles.modalCancelText}>取消</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalConfirm}
+              onPress={handleConfirmAddCategory}
+            >
+              <Text style={styles.modalConfirmText}>确定</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
+    </View>
   );
 }
 
@@ -388,6 +475,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '500',
   },
+  addCategoryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderStyle: 'dashed',
+  },
+  addCategoryText: {
+    fontSize: 13,
+    color: '#999',
+  },
   saveButton: {
     backgroundColor: '#4a6fa5',
     paddingVertical: 16,
@@ -398,6 +497,59 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 24,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#333',
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  modalCancel: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  modalCancelText: {
+    fontSize: 15,
+    color: '#999',
+  },
+  modalConfirm: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#4a6fa5',
+  },
+  modalConfirmText: {
+    fontSize: 15,
+    color: '#fff',
     fontWeight: '600',
   },
 });

@@ -150,6 +150,13 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen
+          name="ClothDetail"
+          component={ClothDetailScreen}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
           name="AddCloth"
           component={AddClothScreen}
           options={{

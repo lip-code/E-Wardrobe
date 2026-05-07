@@ -1,82 +1,59 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import {
-  View,
   Text,
-  ScrollView,
+  View,
   TouchableOpacity,
   StyleSheet,
-  Animated,
 } from 'react-native';
 import { CATEGORIES } from '../utils/constants';
 
-function AnimatedTab({ cat, isActive, onSelect }) {
-  const bgAnim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
-  const scaleAnim = useRef(new Animated.Value(isActive ? 1 : 1)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(bgAnim, {
-        toValue: isActive ? 1 : 0,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: isActive ? 1.08 : 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  }, [isActive]);
-
-  const backgroundColor = bgAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['#f5f5f5', '#4a6fa5'],
-  });
-
+function Tab({ cat, isActive, onSelect }) {
   return (
-    <TouchableOpacity onPress={() => onSelect(cat.key)} activeOpacity={0.7}>
-      <Animated.View
-        style={[
-          styles.tab,
-          { backgroundColor, transform: [{ scale: scaleAnim }] },
-        ]}
-      >
-        <Text style={[styles.tabText, isActive && styles.activeText]}>
-          {cat.label}
-        </Text>
-      </Animated.View>
+    <TouchableOpacity
+      onPress={() => onSelect(cat.key)}
+      activeOpacity={0.7}
+      style={[styles.tab, isActive && styles.activeTab]}
+    >
+      <Text style={[styles.tabText, isActive && styles.activeText]}>
+        {cat.label}
+      </Text>
     </TouchableOpacity>
   );
 }
 
-export default function CategoryTabs({ selected, onSelect }) {
+export default function CategoryTabs({ selected, onSelect, customCategories = [], onAdd }) {
+  const allCategories = [
+    ...CATEGORIES,
+    ...customCategories.map((c) => ({ key: c, label: c })),
+  ];
+
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.container}
-    >
-      {CATEGORIES.map((cat) => (
-        <AnimatedTab
+    <View style={styles.container}>
+      {allCategories.map((cat) => (
+        <Tab
           key={cat.key}
           cat={cat}
           isActive={selected === cat.key}
           onSelect={onSelect}
         />
       ))}
-    </ScrollView>
+      {onAdd && (
+        <TouchableOpacity
+          onPress={onAdd}
+          activeOpacity={0.7}
+          style={styles.addTab}
+        >
+          <Text style={styles.addTabText}>+ 添加</Text>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: 12,
     paddingVertical: 8,
     gap: 8,
@@ -85,6 +62,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  activeTab: {
+    backgroundColor: '#4a6fa5',
   },
   tabText: {
     fontSize: 14,
@@ -93,5 +74,17 @@ const styles = StyleSheet.create({
   activeText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  addTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderStyle: 'dashed',
+  },
+  addTabText: {
+    fontSize: 14,
+    color: '#999',
   },
 });

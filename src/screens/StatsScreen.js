@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useWardrobe } from '../store/WardrobeContext';
 
-export default function StatsScreen() {
+export default function StatsScreen({ navigation }) {
   const { state } = useWardrobe();
 
   const stats = useMemo(() => {
@@ -19,16 +19,12 @@ export default function StatsScreen() {
       return sum + c.wearHistory.filter((d) => d.startsWith(thisMonth)).length;
     }, 0);
 
-    const favoriteCount = state.clothes.filter((c) => c.isFavorite).length;
-
-    return { total, categoryCounts, monthlyWears, favoriteCount };
+    return { total, categoryCounts, monthlyWears };
   }, [state.clothes]);
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>穿衣统计</Text>
-      </View>
+      <View style={styles.header} />
 
       {/* Summary cards */}
       <View style={styles.summaryRow}>
@@ -39,10 +35,6 @@ export default function StatsScreen() {
         <View style={styles.summaryCard}>
           <Text style={styles.summaryNumber}>{stats.monthlyWears}</Text>
           <Text style={styles.summaryLabel}>本月穿着</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>{stats.favoriteCount}</Text>
-          <Text style={styles.summaryLabel}>收藏</Text>
         </View>
       </View>
 
@@ -72,13 +64,18 @@ export default function StatsScreen() {
           .sort((a, b) => b.wearCount - a.wearCount)
           .slice(0, 5)
           .map((cloth, index) => (
-            <View key={cloth.id} style={styles.topRow}>
+            <TouchableOpacity
+              key={cloth.id}
+              style={styles.topRow}
+              onPress={() => navigation.navigate('ClothDetail', { clothId: cloth.id })}
+              activeOpacity={0.7}
+            >
               <Text style={styles.topRank}>{index + 1}</Text>
               <Text style={styles.topName} numberOfLines={1}>
                 {cloth.name}
               </Text>
               <Text style={styles.topCount}>{cloth.wearCount}次</Text>
-            </View>
+            </TouchableOpacity>
           ))}
       </View>
     </ScrollView>
@@ -91,15 +88,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
   },
   header: {
-    paddingHorizontal: 16,
     paddingTop: 60,
-    paddingBottom: 12,
     backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
   },
   summaryRow: {
     flexDirection: 'row',

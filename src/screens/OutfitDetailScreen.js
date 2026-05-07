@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,8 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useWardrobe } from '../store/WardrobeContext';
-import { CATEGORIES } from '../utils/constants';
 
-const CATEGORY_ORDER = ['上衣', '外套', '裤子', '鞋子', '配饰'];
+const BASE_CATEGORIES = ['上衣', '外套', '裤子', '鞋子', '配饰'];
 const CATEGORY_ICONS = {
   '上衣': '👕',
   '外套': '🧥',
@@ -22,6 +21,11 @@ const CATEGORY_ICONS = {
 export default function OutfitDetailScreen({ route, navigation }) {
   const { outfitId } = route.params;
   const { state } = useWardrobe();
+
+  const categoryOrder = useMemo(
+    () => [...BASE_CATEGORIES, ...state.customCategories],
+    [state.customCategories]
+  );
 
   const outfit = state.outfits.find((o) => o.id === outfitId);
   if (!outfit) {
@@ -37,7 +41,7 @@ export default function OutfitDetailScreen({ route, navigation }) {
     .filter(Boolean);
 
   // Group clothes by category in display order
-  const grouped = CATEGORY_ORDER
+  const grouped = categoryOrder
     .map((cat) => ({
       category: cat,
       items: clothes.filter((c) => c.category === cat),

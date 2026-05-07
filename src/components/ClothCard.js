@@ -2,15 +2,13 @@ import React, { useRef } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Dimensions,
   Animated,
   Pressable,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useWardrobe } from '../store/WardrobeContext';
-import { ActionTypes } from '../store/wardrobeReducer';
+import PropTypes from 'prop-types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_MARGIN = 8;
@@ -20,12 +18,7 @@ const blurhash =
   '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
 
 export default function ClothCard({ item, onPress }) {
-  const { dispatch } = useWardrobe();
   const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handleToggleFavorite = () => {
-    dispatch({ type: ActionTypes.TOGGLE_FAVORITE, payload: item.id });
-  };
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -55,15 +48,6 @@ export default function ClothCard({ item, onPress }) {
           contentFit="cover"
           transition={200}
         />
-        <TouchableOpacity
-          style={styles.heartButton}
-          onPress={handleToggleFavorite}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.heartIcon}>
-            {item.isFavorite ? '❤️' : '🤍'}
-          </Text>
-        </TouchableOpacity>
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>
             {item.name}
@@ -82,6 +66,17 @@ export default function ClothCard({ item, onPress }) {
   );
 }
 
+ClothCard.propTypes = {
+  item: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    category: PropTypes.string.isRequired,
+    imageUri: PropTypes.string.isRequired,
+    wearCount: PropTypes.number.isRequired,
+  }).isRequired,
+  onPress: PropTypes.func.isRequired,
+};
+
 const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
@@ -99,14 +94,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: CARD_WIDTH * 1.2,
     backgroundColor: '#f0f0f0',
-  },
-  heartButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-  },
-  heartIcon: {
-    fontSize: 20,
   },
   info: {
     padding: 10,

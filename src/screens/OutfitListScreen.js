@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,144 +9,165 @@ import {
   Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
+import PropTypes from 'prop-types';
+import * as Crypto from 'expo-crypto';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
+
+const OutfitCard = React.memo(function OutfitCard({
+  outfit,
+  clothes,
+  onPress,
+  onSetToday,
+  onEdit,
+  onCopy,
+  onDelete,
+}) {
+  const clothesList = outfit.clothIds
+    .map((id) => clothes.find((c) => c.id === id))
+    .filter(Boolean);
+
+  return (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.cardMain}>
+        <View style={styles.cardLeft}>
+          <View style={styles.nameRow}>
+            <Text style={styles.cardName} numberOfLines={1}>
+              {outfit.name}
+            </Text>
+            {outfit.isTodayOutfit && (
+              <View style={styles.todayBadge}>
+                <Text style={styles.todayText}>今日</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.cardMeta}>
+            {outfit.clothIds.length} 件 · {outfit.date}
+          </Text>
+        </View>
+      </View>
+
+      {/* Images */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.imageStrip}
+      >
+        {clothesList.map((cloth) => (
+          <Image
+            key={cloth.id}
+            source={{ uri: cloth.imageUri }}
+            style={styles.thumb}
+            contentFit="cover"
+            transition={150}
+          />
+        ))}
+      </ScrollView>
+
+      {/* Actions */}
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.actionBtn} onPress={onSetToday}>
+          <Text style={styles.actionBtnText}>
+            {outfit.isTodayOutfit ? '✓ 今日' : '今日'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={onEdit}>
+          <Text style={styles.actionBtnText}>修改</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={onCopy}>
+          <Text style={styles.actionBtnText}>复制</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={onDelete}>
+          <Text style={[styles.actionBtnText, styles.deleteBtnText]}>删除</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
+OutfitCard.propTypes = {
+  outfit: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    clothIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+    date: PropTypes.string.isRequired,
+    isTodayOutfit: PropTypes.bool.isRequired,
+  }).isRequired,
+  clothes: PropTypes.array.isRequired,
+  onPress: PropTypes.func.isRequired,
+  onSetToday: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onCopy: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
 
 export default function OutfitListScreen({ navigation }) {
   const { state, dispatch } = useWardrobe();
 
   const hasEnoughClothes = state.clothes.length >= 2;
 
-  const handleSetToday = (outfitId) => {
-    dispatch({ type: ActionTypes.SET_TODAY_OUTFIT, payload: outfitId });
-    Alert.alert('成功', '已设为今日穿搭');
-  };
+  const handleSetToday = useCallback(
+    (outfitId) => {
+      dispatch({ type: ActionTypes.SET_TODAY_OUTFIT, payload: outfitId });
+      Alert.alert('成功', '已设为今日穿搭');
+    },
+    [dispatch]
+  );
 
-  const handleDelete = (outfitId, outfitName) => {
-    Alert.alert('确认删除', `确定要删除「${outfitName}」吗？`, [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '删除',
-        style: 'destructive',
-        onPress: () =>
-          dispatch({ type: ActionTypes.DELETE_OUTFIT, payload: outfitId }),
-      },
-    ]);
-  };
+  const handleDelete = useCallback(
+    (outfitId, outfitName) => {
+      Alert.alert('确认删除', `确定要删除「${outfitName}」吗？`, [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '删除',
+          style: 'destructive',
+          onPress: () =>
+            dispatch({ type: ActionTypes.DELETE_OUTFIT, payload: outfitId }),
+        },
+      ]);
+    },
+    [dispatch]
+  );
 
-  const handleCopy = (outfit) => {
-    const newOutfit = {
-      ...outfit,
-      id: 'o' + Date.now().toString(),
-      name: outfit.name + '（副本）',
-      date: new Date().toISOString().split('T')[0],
-      isTodayOutfit: false,
-    };
-    dispatch({ type: ActionTypes.ADD_OUTFIT, payload: newOutfit });
-    Alert.alert('成功', '搭配已复制');
-  };
+  const handleCopy = useCallback(
+    (outfit) => {
+      const newOutfit = {
+        ...outfit,
+        id: 'o' + Crypto.randomUUID(),
+        name: outfit.name + '（副本）',
+        date: new Date().toISOString().split('T')[0],
+        isTodayOutfit: false,
+      };
+      dispatch({ type: ActionTypes.ADD_OUTFIT, payload: newOutfit });
+      Alert.alert('成功', '搭配已复制');
+    },
+    [dispatch]
+  );
 
-  const handleEdit = (outfitId) => {
-    navigation.navigate('CreateOutfit', { outfitId });
-  };
+  const keyExtractor = useCallback((item) => item.id, []);
 
-  const getClothById = (id) => state.clothes.find((c) => c.id === id);
-
-  const renderOutfit = ({ item }) => {
-    const clothes = item.clothIds.map(getClothById).filter(Boolean);
-
-    return (
-      <TouchableOpacity
-        style={styles.card}
+  const renderItem = useCallback(
+    ({ item }) => (
+      <OutfitCard
+        outfit={item}
+        clothes={state.clothes}
         onPress={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
-        activeOpacity={0.7}
-      >
-        <View style={styles.cardMain}>
-          <View style={styles.cardLeft}>
-            <View style={styles.nameRow}>
-              <Text style={styles.cardName} numberOfLines={1}>
-                {item.name}
-              </Text>
-              {item.isTodayOutfit && (
-                <View style={styles.todayBadge}>
-                  <Text style={styles.todayText}>今日</Text>
-                </View>
-              )}
-            </View>
-            <Text style={styles.cardMeta}>
-              {item.clothIds.length} 件 · {item.date}
-            </Text>
-          </View>
-        </View>
-
-        {/* Image strip */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.imageStrip}
-        >
-          {clothes.map((cloth) => (
-            <Image
-              key={cloth.id}
-              source={{ uri: cloth.imageUri }}
-              style={styles.thumb}
-              contentFit="cover"
-              transition={150}
-            />
-          ))}
-        </ScrollView>
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => handleSetToday(item.id)}
-          >
-            <Text style={styles.actionBtnText}>
-              {item.isTodayOutfit ? '✓ 今日' : '今日'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => handleEdit(item.id)}
-          >
-            <Text style={styles.actionBtnText}>修改</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => handleCopy(item)}
-          >
-            <Text style={styles.actionBtnText}>复制</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => handleDelete(item.id, item.name)}
-          >
-            <Text style={[styles.actionBtnText, styles.deleteBtnText]}>删除</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+        onSetToday={() => handleSetToday(item.id)}
+        onEdit={() => navigation.navigate('CreateOutfit', { outfitId: item.id })}
+        onCopy={() => handleCopy(item)}
+        onDelete={() => handleDelete(item.id, item.name)}
+      />
+    ),
+    [state.clothes, navigation, handleSetToday, handleDelete, handleCopy]
+  );
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.title}>我的搭配</Text>
-            <Text style={styles.subtitle}>共 {state.outfits.length} 套</Text>
-          </View>
-          {hasEnoughClothes && (
-            <TouchableOpacity
-              style={styles.createButton}
-              onPress={() => navigation.navigate('CreateOutfit')}
-            >
-              <Text style={styles.createButtonText}>+ 创建搭配</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      <View style={styles.header} />
 
       {!hasEnoughClothes && (
         <View style={styles.tipBar}>
@@ -158,9 +179,9 @@ export default function OutfitListScreen({ navigation }) {
 
       <FlatList
         data={state.outfits}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         contentContainerStyle={styles.list}
-        renderItem={renderOutfit}
+        renderItem={renderItem}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>👗</Text>
@@ -173,6 +194,16 @@ export default function OutfitListScreen({ navigation }) {
           </View>
         }
       />
+
+      {hasEnoughClothes && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => navigation.navigate('CreateOutfit')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.fabText}>+ 创建搭配</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -183,35 +214,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
   },
   header: {
-    paddingHorizontal: 16,
     paddingTop: 60,
-    paddingBottom: 12,
     backgroundColor: '#fff',
   },
-  headerTop: {
+  fab: {
+    position: 'absolute',
+    bottom: 28,
+    right: 20,
+    paddingHorizontal: 20,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#333',
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 4,
-  },
-  createButton: {
-    backgroundColor: '#4a6fa5',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  createButtonText: {
+  fabText: {
+    fontSize: 15,
     color: '#fff',
-    fontSize: 14,
     fontWeight: '600',
   },
   tipBar: {

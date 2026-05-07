@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
+import * as Crypto from 'expo-crypto';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
 
-const CATEGORY_ORDER = ['上衣', '外套', '裤子', '鞋子', '配饰'];
+const BASE_CATEGORIES = ['上衣', '外套', '裤子', '鞋子', '配饰'];
 const CATEGORY_ICONS = {
   '上衣': '👕',
   '外套': '🧥',
@@ -36,6 +37,11 @@ export default function CreateOutfitScreen({ route, navigation }) {
   );
   const [activeCategory, setActiveCategory] = useState('上衣');
 
+  const categoryOrder = useMemo(
+    () => [...BASE_CATEGORIES, ...state.customCategories],
+    [state.customCategories]
+  );
+
   const toggleSelect = (clothId) => {
     setSelectedIds((prev) =>
       prev.includes(clothId)
@@ -52,14 +58,16 @@ export default function CreateOutfitScreen({ route, navigation }) {
     return state.clothes.filter((c) => selectedIds.includes(c.id));
   }, [state.clothes, selectedIds]);
 
+  const gridKeyExtractor = useCallback((item) => item.id, []);
+
   const selectedByCategory = useMemo(() => {
     const groups = {};
-    CATEGORY_ORDER.forEach((cat) => {
+    categoryOrder.forEach((cat) => {
       const items = selectedClothes.filter((c) => c.category === cat);
       if (items.length > 0) groups[cat] = items;
     });
     return groups;
-  }, [selectedClothes]);
+  }, [selectedClothes, categoryOrder]);
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -85,7 +93,7 @@ export default function CreateOutfitScreen({ route, navigation }) {
       ]);
     } else {
       const newOutfit = {
-        id: 'o' + Date.now().toString(),
+        id: 'o' + Crypto.randomUUID(),
         name: name.trim(),
         clothIds: selectedIds,
         date: new Date().toISOString().split('T')[0],
@@ -159,7 +167,7 @@ export default function CreateOutfitScreen({ route, navigation }) {
       {/* Category tabs */}
       <View style={styles.categoryTabs}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {CATEGORY_ORDER.map((cat) => {
+          {categoryOrder.map((cat) => {
             const isActive = activeCategory === cat;
             const count = selectedClothes.filter(
               (c) => c.category === cat
@@ -174,7 +182,7 @@ export default function CreateOutfitScreen({ route, navigation }) {
                 onPress={() => setActiveCategory(cat)}
               >
                 <Text style={styles.categoryTabIcon}>
-                  {CATEGORY_ICONS[cat]}
+                  {CATEGORY_ICONS[cat] || '📦'}
                 </Text>
                 <Text
                   style={[
@@ -198,7 +206,7 @@ export default function CreateOutfitScreen({ route, navigation }) {
       {/* Cloth grid */}
       <FlatList
         data={categoryClothes}
-        keyExtractor={(item) => item.id}
+        keyExtractor={gridKeyExtractor}
         numColumns={3}
         columnWrapperStyle={styles.gridRow}
         contentContainerStyle={styles.gridList}
