@@ -3,10 +3,12 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
 
@@ -48,58 +50,84 @@ export default function OutfitListScreen({ navigation }) {
     navigation.navigate('CreateOutfit', { outfitId });
   };
 
-  const renderOutfit = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
-      activeOpacity={0.7}
-    >
-      <View style={styles.cardMain}>
-        <View style={styles.cardLeft}>
-          <Text style={styles.cardName} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={styles.cardMeta}>
-            {item.clothIds.length} 件 · {item.date}
-          </Text>
-        </View>
-        {item.isTodayOutfit && (
-          <View style={styles.todayBadge}>
-            <Text style={styles.todayText}>今日</Text>
-          </View>
-        )}
-      </View>
+  const getClothById = (id) => state.clothes.find((c) => c.id === id);
 
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={() => handleSetToday(item.id)}
+  const renderOutfit = ({ item }) => {
+    const clothes = item.clothIds.map(getClothById).filter(Boolean);
+
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
+        activeOpacity={0.7}
+      >
+        <View style={styles.cardMain}>
+          <View style={styles.cardLeft}>
+            <View style={styles.nameRow}>
+              <Text style={styles.cardName} numberOfLines={1}>
+                {item.name}
+              </Text>
+              {item.isTodayOutfit && (
+                <View style={styles.todayBadge}>
+                  <Text style={styles.todayText}>今日</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.cardMeta}>
+              {item.clothIds.length} 件 · {item.date}
+            </Text>
+          </View>
+        </View>
+
+        {/* Image strip */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.imageStrip}
         >
-          <Text style={styles.actionBtnText}>
-            {item.isTodayOutfit ? '✓ 今日' : '今日'}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={() => handleEdit(item.id)}
-        >
-          <Text style={styles.actionBtnText}>修改</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={() => handleCopy(item)}
-        >
-          <Text style={styles.actionBtnText}>复制</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={() => handleDelete(item.id, item.name)}
-        >
-          <Text style={[styles.actionBtnText, styles.deleteBtnText]}>删除</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+          {clothes.map((cloth) => (
+            <Image
+              key={cloth.id}
+              source={{ uri: cloth.imageUri }}
+              style={styles.thumb}
+              contentFit="cover"
+              transition={150}
+            />
+          ))}
+        </ScrollView>
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => handleSetToday(item.id)}
+          >
+            <Text style={styles.actionBtnText}>
+              {item.isTodayOutfit ? '✓ 今日' : '今日'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => handleEdit(item.id)}
+          >
+            <Text style={styles.actionBtnText}>修改</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => handleCopy(item)}
+          >
+            <Text style={styles.actionBtnText}>复制</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => handleDelete(item.id, item.name)}
+          >
+            <Text style={[styles.actionBtnText, styles.deleteBtnText]}>删除</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -216,7 +244,11 @@ const styles = StyleSheet.create({
   },
   cardLeft: {
     flex: 1,
-    marginRight: 10,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   cardName: {
     fontSize: 16,
@@ -227,6 +259,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#aaa',
     marginTop: 2,
+  },
+  imageStrip: {
+    marginBottom: 10,
+  },
+  thumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    marginRight: 8,
+    backgroundColor: '#f0f0f0',
   },
   todayBadge: {
     backgroundColor: '#ff6b6b',
