@@ -7,23 +7,12 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
-
-const CATEGORY_ORDER = ['上衣', '外套', '裤子', '鞋子', '配饰'];
-const CATEGORY_ICONS = {
-  '上衣': '👕',
-  '外套': '🧥',
-  '裤子': '👖',
-  '鞋子': '👟',
-  '配饰': '👜',
-};
 
 export default function OutfitListScreen({ navigation }) {
   const { state, dispatch } = useWardrobe();
 
-  const getClothById = (id) => state.clothes.find((c) => c.id === id);
   const hasEnoughClothes = state.clothes.length >= 2;
 
   const handleSetToday = (outfitId) => {
@@ -59,99 +48,58 @@ export default function OutfitListScreen({ navigation }) {
     navigation.navigate('CreateOutfit', { outfitId });
   };
 
-  const renderOutfit = ({ item }) => {
-    const clothes = item.clothIds.map(getClothById).filter(Boolean);
-
-    // Group by category in display order
-    const grouped = CATEGORY_ORDER
-      .map((cat) => ({
-        category: cat,
-        items: clothes.filter((c) => c.category === cat),
-      }))
-      .filter((g) => g.items.length > 0);
-
-    return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
-        activeOpacity={0.85}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.cardTitleRow}>
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            {item.isTodayOutfit && (
-              <View style={styles.todayBadge}>
-                <Text style={styles.todayBadgeText}>今日</Text>
-              </View>
-            )}
+  const renderOutfit = ({ item }) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
+      activeOpacity={0.7}
+    >
+      <View style={styles.cardMain}>
+        <View style={styles.cardLeft}>
+          <Text style={styles.cardName} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={styles.cardMeta}>
+            {item.clothIds.length} 件 · {item.date}
+          </Text>
+        </View>
+        {item.isTodayOutfit && (
+          <View style={styles.todayBadge}>
+            <Text style={styles.todayText}>今日</Text>
           </View>
-          <Text style={styles.cardDate}>{item.date}</Text>
-        </View>
+        )}
+      </View>
 
-        {/* Vertical outfit display */}
-        <View style={styles.outfitPreview}>
-          {grouped.map((group) => (
-            <View key={group.category} style={styles.categoryRow}>
-              <View style={styles.categoryLabel}>
-                <Text style={styles.categoryIcon}>
-                  {CATEGORY_ICONS[group.category]}
-                </Text>
-                <Text style={styles.categoryName}>{group.category}</Text>
-              </View>
-              <View style={styles.categoryItems}>
-                {group.items.map((cloth) => (
-                  <View key={cloth.id} style={styles.clothItem}>
-                    <Image
-                      source={{ uri: cloth.imageUri }}
-                      style={styles.clothImage}
-                      contentFit="cover"
-                      transition={200}
-                    />
-                    <View style={styles.clothInfo}>
-                      <Text style={styles.clothName} numberOfLines={1}>
-                        {cloth.name}
-                      </Text>
-                      <Text style={styles.clothColor}>{cloth.color}</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* Actions */}
-        <View style={styles.cardActions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleSetToday(item.id)}
-          >
-            <Text style={styles.actionText}>
-              {item.isTodayOutfit ? '✓ 今日' : '设为今日'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleEdit(item.id)}
-          >
-            <Text style={styles.actionText}>修改</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleCopy(item)}
-          >
-            <Text style={styles.actionText}>复制</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.deleteAction]}
-            onPress={() => handleDelete(item.id, item.name)}
-          >
-            <Text style={[styles.actionText, styles.deleteText]}>删除</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => handleSetToday(item.id)}
+        >
+          <Text style={styles.actionBtnText}>
+            {item.isTodayOutfit ? '✓ 今日' : '今日'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => handleEdit(item.id)}
+        >
+          <Text style={styles.actionBtnText}>修改</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => handleCopy(item)}
+        >
+          <Text style={styles.actionBtnText}>复制</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => handleDelete(item.id, item.name)}
+        >
+          <Text style={[styles.actionBtnText, styles.deleteBtnText]}>删除</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
@@ -250,127 +198,64 @@ const styles = StyleSheet.create({
     color: '#ad6800',
   },
   list: {
-    padding: 16,
+    padding: 12,
     paddingBottom: 100,
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 8,
   },
-  cardHeader: {
+  cardMain: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
-  cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  cardLeft: {
+    flex: 1,
+    marginRight: 10,
   },
-  cardTitle: {
-    fontSize: 18,
+  cardName: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#333',
+  },
+  cardMeta: {
+    fontSize: 12,
+    color: '#aaa',
+    marginTop: 2,
   },
   todayBadge: {
     backgroundColor: '#ff6b6b',
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 10,
   },
-  todayBadgeText: {
+  todayText: {
     color: '#fff',
     fontSize: 11,
     fontWeight: '600',
   },
-  cardDate: {
-    fontSize: 12,
-    color: '#999',
-  },
-  outfitPreview: {
-    gap: 10,
-    marginBottom: 14,
-  },
-  categoryRow: {
+  actions: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  categoryLabel: {
-    width: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  categoryIcon: {
-    fontSize: 16,
-  },
-  categoryName: {
-    fontSize: 12,
-    color: '#888',
-    fontWeight: '500',
-  },
-  categoryItems: {
-    flex: 1,
-    gap: 6,
-  },
-  clothItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  clothImage: {
-    width: 56,
-    height: 56,
-    backgroundColor: '#f0f0f0',
-  },
-  clothInfo: {
-    flex: 1,
-    paddingHorizontal: 10,
-  },
-  clothName: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#333',
-  },
-  clothColor: {
-    fontSize: 11,
-    color: '#999',
-    marginTop: 2,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    gap: 8,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#f0f0f0',
-    paddingTop: 12,
+    paddingTop: 10,
+    gap: 0,
   },
-  actionButton: {
+  actionBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#f0f4ff',
     alignItems: 'center',
+    paddingVertical: 4,
   },
-  deleteAction: {
-    backgroundColor: '#fff0f0',
-  },
-  actionText: {
+  actionBtnText: {
     fontSize: 13,
     color: '#4a6fa5',
-    fontWeight: '500',
   },
-  deleteText: {
+  deleteBtnText: {
     color: '#ff4d4f',
   },
   empty: {
