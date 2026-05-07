@@ -22,10 +22,18 @@ const CATEGORY_ICONS = {
   '配饰': '👜',
 };
 
-export default function CreateOutfitScreen({ navigation }) {
+export default function CreateOutfitScreen({ route, navigation }) {
   const { state, dispatch } = useWardrobe();
-  const [name, setName] = useState('');
-  const [selectedIds, setSelectedIds] = useState([]);
+  const editId = route.params?.outfitId;
+  const editingOutfit = editId
+    ? state.outfits.find((o) => o.id === editId)
+    : null;
+  const isEdit = !!editingOutfit;
+
+  const [name, setName] = useState(editingOutfit?.name || '');
+  const [selectedIds, setSelectedIds] = useState(
+    editingOutfit?.clothIds || []
+  );
   const [activeCategory, setActiveCategory] = useState('上衣');
 
   const toggleSelect = (clothId) => {
@@ -63,18 +71,31 @@ export default function CreateOutfitScreen({ navigation }) {
       return;
     }
 
-    const newOutfit = {
-      id: 'o' + Date.now().toString(),
-      name: name.trim(),
-      clothIds: selectedIds,
-      date: new Date().toISOString().split('T')[0],
-      isTodayOutfit: false,
-    };
-
-    dispatch({ type: ActionTypes.ADD_OUTFIT, payload: newOutfit });
-    Alert.alert('成功', '搭配已创建！', [
-      { text: '确定', onPress: () => navigation.goBack() },
-    ]);
+    if (isEdit) {
+      dispatch({
+        type: ActionTypes.UPDATE_OUTFIT,
+        payload: {
+          id: editId,
+          name: name.trim(),
+          clothIds: selectedIds,
+        },
+      });
+      Alert.alert('成功', '搭配已更新！', [
+        { text: '确定', onPress: () => navigation.goBack() },
+      ]);
+    } else {
+      const newOutfit = {
+        id: 'o' + Date.now().toString(),
+        name: name.trim(),
+        clothIds: selectedIds,
+        date: new Date().toISOString().split('T')[0],
+        isTodayOutfit: false,
+      };
+      dispatch({ type: ActionTypes.ADD_OUTFIT, payload: newOutfit });
+      Alert.alert('成功', '搭配已创建！', [
+        { text: '确定', onPress: () => navigation.goBack() },
+      ]);
+    }
   };
 
   return (
@@ -84,7 +105,9 @@ export default function CreateOutfitScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.cancelText}>取消</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>创建搭配</Text>
+        <Text style={styles.headerTitle}>
+          {isEdit ? '修改搭配' : '创建搭配'}
+        </Text>
         <TouchableOpacity onPress={handleSave}>
           <Text style={styles.saveText}>保存</Text>
         </TouchableOpacity>

@@ -43,6 +43,22 @@ export default function OutfitListScreen({ navigation }) {
     ]);
   };
 
+  const handleCopy = (outfit) => {
+    const newOutfit = {
+      ...outfit,
+      id: 'o' + Date.now().toString(),
+      name: outfit.name + '（副本）',
+      date: new Date().toISOString().split('T')[0],
+      isTodayOutfit: false,
+    };
+    dispatch({ type: ActionTypes.ADD_OUTFIT, payload: newOutfit });
+    Alert.alert('成功', '搭配已复制');
+  };
+
+  const handleEdit = (outfitId) => {
+    navigation.navigate('CreateOutfit', { outfitId });
+  };
+
   const renderOutfit = ({ item }) => {
     const clothes = item.clothIds.map(getClothById).filter(Boolean);
 
@@ -111,8 +127,20 @@ export default function OutfitListScreen({ navigation }) {
             onPress={() => handleSetToday(item.id)}
           >
             <Text style={styles.actionText}>
-              {item.isTodayOutfit ? '已是今日穿搭' : '设为今日穿搭'}
+              {item.isTodayOutfit ? '✓ 今日' : '设为今日'}
             </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleEdit(item.id)}
+          >
+            <Text style={styles.actionText}>修改</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleCopy(item)}
+          >
+            <Text style={styles.actionText}>复制</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.deleteAction]}

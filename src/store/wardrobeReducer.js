@@ -15,6 +15,7 @@ export const ActionTypes = {
   RECORD_WEAR: 'RECORD_WEAR',
   SET_OUTFITS: 'SET_OUTFITS',
   ADD_OUTFIT: 'ADD_OUTFIT',
+  UPDATE_OUTFIT: 'UPDATE_OUTFIT',
   DELETE_OUTFIT: 'DELETE_OUTFIT',
   SET_TODAY_OUTFIT: 'SET_TODAY_OUTFIT',
   SET_LOADING: 'SET_LOADING',
@@ -71,6 +72,14 @@ export function wardrobeReducer(state, action) {
 
     case ActionTypes.ADD_OUTFIT:
       return { ...state, outfits: [...state.outfits, action.payload] };
+
+    case ActionTypes.UPDATE_OUTFIT:
+      return {
+        ...state,
+        outfits: state.outfits.map((o) =>
+          o.id === action.payload.id ? { ...o, ...action.payload } : o
+        ),
+      };
 
     case ActionTypes.DELETE_OUTFIT:
       return {
