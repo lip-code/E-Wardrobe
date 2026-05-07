@@ -31,31 +31,34 @@ const OutfitCard = React.memo(function OutfitCard({
     <TouchableOpacity
       style={styles.card}
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.85}
     >
-      <View style={styles.cardMain}>
-        <View style={styles.cardLeft}>
-          <View style={styles.nameRow}>
-            <Text style={styles.cardName} numberOfLines={1}>
-              {outfit.name}
-            </Text>
-            {outfit.isTodayOutfit && (
-              <View style={styles.todayBadge}>
-                <Text style={styles.todayText}>今日</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.cardMeta}>
-            {outfit.clothIds.length} 件 · {outfit.date}
+      {/* Header */}
+      <View style={styles.cardHeader}>
+        <View style={styles.cardHeaderLeft}>
+          {outfit.isTodayOutfit && (
+            <View style={styles.todayBadge}>
+              <Text style={styles.todayText}>今日穿搭</Text>
+            </View>
+          )}
+          <Text style={styles.cardName} numberOfLines={1}>
+            {outfit.name}
           </Text>
+          <Text style={styles.cardMeta}>
+            {outfit.clothIds.length} 件单品 · {outfit.date}
+          </Text>
+        </View>
+        <View style={styles.clothCount}>
+          <Text style={styles.clothCountText}>{outfit.clothIds.length}</Text>
         </View>
       </View>
 
-      {/* Images */}
+      {/* Images strip */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.imageStrip}
+        contentContainerStyle={styles.imageStripContent}
       >
         {clothesList.map((cloth) => (
           <Image
@@ -66,21 +69,32 @@ const OutfitCard = React.memo(function OutfitCard({
             transition={150}
           />
         ))}
+        {clothesList.length === 0 && (
+          <View style={styles.emptyThumb}>
+            <Text style={styles.emptyThumbText}>无图片</Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Actions */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={onSetToday}>
-          <Text style={styles.actionBtnText}>
+        <TouchableOpacity
+          style={[styles.actionBtn, outfit.isTodayOutfit && styles.actionBtnActive]}
+          onPress={onSetToday}
+        >
+          <Text style={[styles.actionBtnText, outfit.isTodayOutfit && styles.actionBtnTextActive]}>
             {outfit.isTodayOutfit ? '✓ 今日' : '今日'}
           </Text>
         </TouchableOpacity>
+        <View style={styles.actionDivider} />
         <TouchableOpacity style={styles.actionBtn} onPress={onEdit}>
           <Text style={styles.actionBtnText}>修改</Text>
         </TouchableOpacity>
+        <View style={styles.actionDivider} />
         <TouchableOpacity style={styles.actionBtn} onPress={onCopy}>
           <Text style={styles.actionBtnText}>复制</Text>
         </TouchableOpacity>
+        <View style={styles.actionDivider} />
         <TouchableOpacity style={styles.actionBtn} onPress={onDelete}>
           <Text style={[styles.actionBtnText, styles.deleteBtnText]}>删除</Text>
         </TouchableOpacity>
@@ -113,7 +127,7 @@ export default function OutfitListScreen({ navigation }) {
   const handleSetToday = useCallback(
     (outfitId) => {
       dispatch({ type: ActionTypes.SET_TODAY_OUTFIT, payload: outfitId });
-      Alert.alert('成功', '已设为今日穿搭');
+      Alert.alert('✅', '已设为今日穿搭');
     },
     [dispatch]
   );
@@ -143,7 +157,7 @@ export default function OutfitListScreen({ navigation }) {
         isTodayOutfit: false,
       };
       dispatch({ type: ActionTypes.ADD_OUTFIT, payload: newOutfit });
-      Alert.alert('成功', '搭配已复制');
+      Alert.alert('✅', '搭配已复制');
     },
     [dispatch]
   );
@@ -167,12 +181,21 @@ export default function OutfitListScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header} />
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>我的搭配</Text>
+        <Text style={styles.headerSubtitle}>
+          {state.outfits.length > 0
+            ? `共 ${state.outfits.length} 套方案`
+            : '创建你的第一套搭配'}
+        </Text>
+      </View>
 
       {!hasEnoughClothes && (
         <View style={styles.tipBar}>
+          <Text style={styles.tipIcon}>💡</Text>
           <Text style={styles.tipText}>
-            💡 至少需要 2 件衣物才能创建搭配，当前有 {state.clothes.length} 件
+            至少需要 2 件衣物才能创建搭配，当前有 {state.clothes.length} 件
           </Text>
         </View>
       )}
@@ -182,14 +205,17 @@ export default function OutfitListScreen({ navigation }) {
         keyExtractor={keyExtractor}
         contentContainerStyle={styles.list}
         renderItem={renderItem}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>👗</Text>
+            <View style={styles.emptyIconWrapper}>
+              <Text style={styles.emptyIcon}>👗</Text>
+            </View>
             <Text style={styles.emptyText}>还没有搭配方案</Text>
             <Text style={styles.emptyHint}>
               {hasEnoughClothes
-                ? '在衣橱中选择衣物组合搭配吧'
-                : '先去衣橱添加至少 2 件衣物再来搭配'}
+                ? '在衣橱中选择衣物，\n组合出你的完美搭配'
+                : '先去衣橱添加至少 2 件衣物\n再来创建搭配'}
             </Text>
           </View>
         }
@@ -199,7 +225,7 @@ export default function OutfitListScreen({ navigation }) {
         <TouchableOpacity
           style={styles.fab}
           onPress={() => navigation.navigate('CreateOutfit')}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
           <Text style={styles.fabText}>+ 创建搭配</Text>
         </TouchableOpacity>
@@ -211,137 +237,218 @@ export default function OutfitListScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#FAF9F6',
   },
   header: {
-    paddingTop: 60,
-    backgroundColor: '#fff',
+    paddingTop: 64,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1A1F36',
+    letterSpacing: -0.8,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: '#9B9EB5',
+    marginTop: 3,
+    fontWeight: '500',
   },
   fab: {
     position: 'absolute',
     bottom: 28,
     right: 20,
-    paddingHorizontal: 20,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#333',
+    paddingHorizontal: 22,
+    height: 50,
+    borderRadius: 18,
+    backgroundColor: '#1A1F36',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
+    shadowColor: '#1A1F36',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   fabText: {
     fontSize: 15,
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   tipBar: {
-    backgroundColor: '#fffbe6',
+    backgroundColor: '#FFFBF0',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ffe58f',
-  },
-  tipText: {
-    fontSize: 13,
-    color: '#ad6800',
-  },
-  list: {
-    padding: 12,
-    paddingBottom: 100,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 8,
-  },
-  cardMain: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  cardLeft: {
-    flex: 1,
-  },
-  nameRow: {
+    paddingVertical: 12,
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#E8B44A',
   },
-  cardName: {
+  tipIcon: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
   },
-  cardMeta: {
-    fontSize: 12,
-    color: '#aaa',
-    marginTop: 2,
+  tipText: {
+    fontSize: 13,
+    color: '#8A6B1A',
+    fontWeight: '500',
+    flex: 1,
   },
-  imageStrip: {
-    marginBottom: 10,
+  list: {
+    padding: 16,
+    paddingBottom: 110,
+    gap: 14,
   },
-  thumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
-    marginRight: 8,
-    backgroundColor: '#f0f0f0',
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#1A1F36',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    padding: 18,
+    paddingBottom: 12,
+  },
+  cardHeaderLeft: {
+    flex: 1,
+    marginRight: 12,
   },
   todayBadge: {
-    backgroundColor: '#ff6b6b',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    backgroundColor: '#E8734A',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 10,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
   },
   todayText: {
     color: '#fff',
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  cardName: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#1A1F36',
+    letterSpacing: -0.4,
+    marginBottom: 4,
+  },
+  cardMeta: {
+    fontSize: 12,
+    color: '#9B9EB5',
+    fontWeight: '500',
+  },
+  clothCount: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#EEF0FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clothCountText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#4A6FE8',
+  },
+  imageStrip: {
+    marginBottom: 0,
+  },
+  imageStripContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    gap: 8,
+  },
+  thumb: {
+    width: 70,
+    height: 88,
+    borderRadius: 14,
+    backgroundColor: '#F0EEE9',
+  },
+  emptyThumb: {
+    width: 70,
+    height: 88,
+    borderRadius: 14,
+    backgroundColor: '#F5F6FA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyThumbText: {
+    fontSize: 11,
+    color: '#9B9EB5',
   },
   actions: {
     flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#f0f0f0',
-    paddingTop: 10,
-    gap: 0,
+    borderTopWidth: 1,
+    borderTopColor: '#F5F6FA',
   },
   actionBtn: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 13,
+  },
+  actionBtnActive: {
+    backgroundColor: '#F0F4FF',
   },
   actionBtnText: {
     fontSize: 13,
-    color: '#4a6fa5',
+    color: '#4A6FE8',
+    fontWeight: '600',
+  },
+  actionBtnTextActive: {
+    color: '#2C3E6B',
+    fontWeight: '700',
+  },
+  actionDivider: {
+    width: 1,
+    backgroundColor: '#F5F6FA',
   },
   deleteBtnText: {
-    color: '#ff4d4f',
+    color: '#E85C6A',
   },
   empty: {
     alignItems: 'center',
     paddingTop: 60,
+    paddingHorizontal: 40,
+  },
+  emptyIconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: '#EEF0FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
+    fontSize: 36,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#999',
+    fontSize: 18,
+    color: '#1A1F36',
+    fontWeight: '800',
+    marginBottom: 8,
+    letterSpacing: -0.4,
   },
   emptyHint: {
-    fontSize: 13,
-    color: '#bbb',
-    marginTop: 8,
+    fontSize: 14,
+    color: '#9B9EB5',
     textAlign: 'center',
+    lineHeight: 22,
+    fontWeight: '500',
   },
 });

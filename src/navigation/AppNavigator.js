@@ -17,29 +17,22 @@ import FloatingButton from '../components/FloatingButton';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+const TAB_ICONS = {
+  '衣橱': { default: '👕', active: '👕' },
+  '搭配': { default: '👗', active: '👗' },
+  '统计': { default: '📊', active: '📊' },
+  '我的': { default: '👤', active: '👤' },
+};
+
 function TabIcon({ label, focused }) {
-  const icons = {
-    '衣橱': '👕',
-    '搭配': '👗',
-    '统计': '📊',
-    '我的': '👤',
-  };
   return (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>
-      {icons[label] || '📱'}
-    </Text>
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>
+        {TAB_ICONS[label]?.default || '📱'}
+      </Text>
+    </View>
   );
 }
-
-const fadeTransition = {
-  animation: 'fade',
-  config: {
-    animation: 'fade',
-    config: {
-      duration: 200,
-    },
-  },
-};
 
 function HomeStack() {
   return (
@@ -77,21 +70,36 @@ function MainTabs({ navigation }) {
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: true,
-          tabBarActiveTintColor: '#4a6fa5',
-          tabBarInactiveTintColor: '#999',
-          tabBarStyle: {
-            height: Platform.OS === 'ios' ? 88 : 64,
-            paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-            paddingTop: 8,
-            backgroundColor: '#fff',
-            borderTopWidth: 0.5,
-            borderTopColor: '#e0e0e0',
-            elevation: 8,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
+          tabBarActiveTintColor: '#2C3E6B',
+          tabBarInactiveTintColor: '#9B9EB5',
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '700',
+            marginTop: -2,
           },
+          tabBarStyle: {
+            height: Platform.OS === 'ios' ? 88 : 66,
+            paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+            paddingTop: 8,
+            backgroundColor: '#FFFFFF',
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowColor: '#1A1F36',
+            shadowOffset: { width: 0, height: -8 },
+            shadowOpacity: 0.08,
+            shadowRadius: 20,
+          },
+          tabBarBackground: () => (
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: '#FFFFFF',
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                overflow: 'hidden',
+              }}
+            />
+          ),
         }}
       >
         <Tab.Screen

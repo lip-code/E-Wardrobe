@@ -17,9 +17,16 @@ export default function WearCalendar({ wearHistory = [] }) {
     });
   }
 
+  const wornCount = days.filter((d) => d.isWorn).length;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>近30天穿着记录</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>近30天记录</Text>
+        <View style={styles.countBadge}>
+          <Text style={styles.countText}>穿了 {wornCount} 天</Text>
+        </View>
+      </View>
       <View style={styles.grid}>
         {days.map((d, i) => (
           <View
@@ -28,13 +35,14 @@ export default function WearCalendar({ wearHistory = [] }) {
               styles.dayCell,
               d.isWorn && styles.wornCell,
               d.isToday && styles.todayCell,
+              d.isWorn && d.isToday && styles.wornTodayCell,
             ]}
           >
             <Text
               style={[
                 styles.dayText,
                 d.isWorn && styles.wornText,
-                d.isToday && styles.todayText,
+                d.isToday && !d.isWorn && styles.todayText,
               ]}
             >
               {d.day}
@@ -44,11 +52,11 @@ export default function WearCalendar({ wearHistory = [] }) {
       </View>
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.wornCell]} />
+          <View style={[styles.legendDot, { backgroundColor: '#2C3E6B' }]} />
           <Text style={styles.legendText}>已穿</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.todayCell]} />
+          <View style={[styles.legendDot, { borderWidth: 2, borderColor: '#E8734A' }]} />
           <Text style={styles.legendText}>今天</Text>
         </View>
       </View>
@@ -58,63 +66,88 @@ export default function WearCalendar({ wearHistory = [] }) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   title: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
+    fontWeight: '800',
+    color: '#1A1F36',
+    letterSpacing: -0.3,
+  },
+  countBadge: {
+    backgroundColor: '#EEF0FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  countText: {
+    fontSize: 12,
+    color: '#4A6FE8',
+    fontWeight: '700',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 5,
+    marginBottom: 14,
   },
   dayCell: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    backgroundColor: '#F5F6FA',
     alignItems: 'center',
     justifyContent: 'center',
   },
   wornCell: {
-    backgroundColor: '#4a6fa5',
+    backgroundColor: '#2C3E6B',
   },
   todayCell: {
     borderWidth: 2,
-    borderColor: '#ff6b6b',
+    borderColor: '#E8734A',
+    backgroundColor: '#FFFFFF',
+  },
+  wornTodayCell: {
+    backgroundColor: '#2C3E6B',
+    borderColor: '#E8734A',
   },
   dayText: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 11,
+    color: '#9B9EB5',
+    fontWeight: '600',
   },
   wornText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   todayText: {
-    color: '#ff6b6b',
-    fontWeight: '600',
+    color: '#E8734A',
+    fontWeight: '800',
   },
   legend: {
     flexDirection: 'row',
-    marginTop: 12,
     gap: 16,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   legendDot: {
     width: 12,
     height: 12,
-    borderRadius: 6,
+    borderRadius: 4,
+    backgroundColor: 'transparent',
   },
   legendText: {
     fontSize: 12,
-    color: '#666',
+    color: '#9B9EB5',
+    fontWeight: '600',
   },
 });

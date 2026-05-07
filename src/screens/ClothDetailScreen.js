@@ -14,6 +14,17 @@ import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
 import WearCalendar from '../components/WearCalendar';
 
+const INFO_ICONS = {
+  '分类': '📂',
+  '颜色': '🎨',
+  '场景': '🌟',
+  '季节': '🍃',
+  '品牌': '🏷️',
+  '材质': '🧵',
+  '价格': '💰',
+  '购买日期': '📅',
+};
+
 export default function ClothDetailScreen({ route, navigation }) {
   const { clothId } = route.params;
   const { state, dispatch } = useWardrobe();
@@ -31,7 +42,7 @@ export default function ClothDetailScreen({ route, navigation }) {
   if (state.isBootstrapping) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#4a6fa5" />
+        <ActivityIndicator size="large" color="#2C3E6B" />
       </View>
     );
   }
@@ -39,7 +50,7 @@ export default function ClothDetailScreen({ route, navigation }) {
   if (!cloth) {
     return (
       <View style={styles.center}>
-        <Text>衣物不存在</Text>
+        <Text style={styles.errorText}>衣物不存在</Text>
       </View>
     );
   }
@@ -51,7 +62,7 @@ export default function ClothDetailScreen({ route, navigation }) {
       return;
     }
     dispatch({ type: ActionTypes.RECORD_WEAR, payload: clothId });
-    Alert.alert('成功', '已记录今日穿着！');
+    Alert.alert('✅ 已记录', '今日穿着已记录！');
   };
 
   const handleDelete = () => {
@@ -68,56 +79,87 @@ export default function ClothDetailScreen({ route, navigation }) {
     ]);
   };
 
+  const infoItems = [
+    { label: '分类', value: cloth.category },
+    { label: '颜色', value: cloth.color },
+    { label: '场景', value: cloth.scene },
+    { label: '季节', value: cloth.season },
+    cloth.brand && { label: '品牌', value: cloth.brand },
+    cloth.material && { label: '材质', value: cloth.material },
+    cloth.price && { label: '价格', value: `¥${cloth.price}` },
+    cloth.purchaseDate && { label: '购买日期', value: cloth.purchaseDate },
+  ].filter(Boolean);
+
   return (
-    <ScrollView style={styles.container}>
-      <Image
-        source={{ uri: cloth.imageUri }}
-        style={styles.image}
-        contentFit="cover"
-        transition={300}
-      />
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Hero Image */}
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: cloth.imageUri }}
+          style={styles.image}
+          contentFit="cover"
+          transition={300}
+        />
+        {/* Back button overlay */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backArrow}>‹</Text>
+        </TouchableOpacity>
+        {/* Favorite badge */}
+        {cloth.isFavorite && (
+          <View style={styles.favBadge}>
+            <Text>♥</Text>
+          </View>
+        )}
+      </View>
 
       <View style={styles.content}>
-        <View style={styles.header}>
+        {/* Title area */}
+        <View style={styles.titleRow}>
           <Text style={styles.name}>{cloth.name}</Text>
+          <View style={styles.wearPill}>
+            <Text style={styles.wearPillText}>穿了 {cloth.wearCount} 次</Text>
+          </View>
         </View>
 
         {/* Info grid */}
         <View style={styles.infoGrid}>
-          <InfoItem label="分类" value={cloth.category} />
-          <InfoItem label="颜色" value={cloth.color} />
-          <InfoItem label="场景" value={cloth.scene} />
-          <InfoItem label="季节" value={cloth.season} />
-          {cloth.brand && <InfoItem label="品牌" value={cloth.brand} />}
-          {cloth.material && <InfoItem label="材质" value={cloth.material} />}
-          {cloth.price && (
-            <InfoItem label="价格" value={`¥${cloth.price}`} />
-          )}
-          {cloth.purchaseDate && (
-            <InfoItem label="购买日期" value={cloth.purchaseDate} />
-          )}
+          {infoItems.map(({ label, value }) => (
+            <View key={label} style={styles.infoItem}>
+              <Text style={styles.infoIcon}>{INFO_ICONS[label] || '📌'}</Text>
+              <View>
+                <Text style={styles.infoLabel}>{label}</Text>
+                <Text style={styles.infoValue}>{value}</Text>
+              </View>
+            </View>
+          ))}
         </View>
 
+        {/* Notes */}
         {cloth.notes ? (
           <View style={styles.notesSection}>
-            <Text style={styles.notesLabel}>备注</Text>
-            <Text style={styles.notesText}>{cloth.notes}</Text>
+            <Text style={styles.notesIcon}>📝</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.notesLabel}>备注</Text>
+              <Text style={styles.notesText}>{cloth.notes}</Text>
+            </View>
           </View>
         ) : null}
 
-        {/* Wear stats */}
-        <View style={styles.wearStats}>
-          <Text style={styles.wearStatsTitle}>穿着统计</Text>
-          <Text style={styles.wearStatsCount}>
-            累计穿着 {cloth.wearCount} 次
-          </Text>
+        {/* Wear calendar */}
+        <View style={styles.calendarSection}>
+          <WearCalendar wearHistory={cloth.wearHistory} />
         </View>
 
-        {/* Wear calendar */}
-        <WearCalendar wearHistory={cloth.wearHistory} />
-
         {/* Record wear button */}
-        <TouchableOpacity style={styles.wearButton} onPress={handleRecordWear}>
+        <TouchableOpacity
+          style={styles.wearButton}
+          onPress={handleRecordWear}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.wearButtonIcon}>✓</Text>
           <Text style={styles.wearButtonText}>记录今日穿着</Text>
         </TouchableOpacity>
 
@@ -136,6 +178,7 @@ export default function ClothDetailScreen({ route, navigation }) {
                   onPress={() =>
                     navigation.push('ClothDetail', { clothId: item.id })
                   }
+                  activeOpacity={0.8}
                 >
                   <Image
                     source={{ uri: item.imageUri }}
@@ -153,7 +196,11 @@ export default function ClothDetailScreen({ route, navigation }) {
         )}
 
         {/* Delete button */}
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={handleDelete}
+          activeOpacity={0.7}
+        >
           <Text style={styles.deleteButtonText}>删除此衣物</Text>
         </TouchableOpacity>
       </View>
@@ -161,117 +208,206 @@ export default function ClothDetailScreen({ route, navigation }) {
   );
 }
 
-function InfoItem({ label, value }) {
-  return (
-    <View style={styles.infoItem}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FAF9F6',
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FAF9F6',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#9B9EB5',
+    fontWeight: '500',
+  },
+  imageContainer: {
+    position: 'relative',
   },
   image: {
     width: '100%',
-    height: 400,
-    backgroundColor: '#f0f0f0',
+    height: 420,
+    backgroundColor: '#F0EEE9',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 56,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  backArrow: {
+    fontSize: 28,
+    color: '#1A1F36',
+    lineHeight: 32,
+    marginLeft: -2,
+    fontWeight: '300',
+  },
+  favBadge: {
+    position: 'absolute',
+    top: 56,
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 18,
   },
   content: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 24,
   },
-  header: {
+  titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
   name: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333',
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#1A1F36',
     flex: 1,
+    letterSpacing: -0.8,
+    marginRight: 12,
+  },
+  wearPill: {
+    backgroundColor: '#FFF0E8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  wearPillText: {
+    fontSize: 13,
+    color: '#E8734A',
+    fontWeight: '700',
   },
   infoGrid: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 16,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 16,
+    gap: 4,
+    shadowColor: '#1A1F36',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
   },
   infoItem: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    minWidth: '30%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    width: '48%',
+    padding: 10,
+    borderRadius: 14,
+    backgroundColor: '#FAFBFF',
+    marginBottom: 6,
+  },
+  infoIcon: {
+    fontSize: 18,
   },
   infoLabel: {
-    fontSize: 11,
-    color: '#999',
-    marginBottom: 2,
+    fontSize: 10,
+    color: '#9B9EB5',
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   infoValue: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
+    fontSize: 13,
+    color: '#1A1F36',
+    fontWeight: '700',
+    marginTop: 1,
   },
   notesSection: {
-    backgroundColor: '#fffbe6',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: '#FFFBF0',
+    borderRadius: 18,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
     marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: '#E8B44A',
+  },
+  notesIcon: {
+    fontSize: 18,
+    marginTop: 1,
   },
   notesLabel: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 4,
+    fontSize: 11,
+    color: '#C49B3A',
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginBottom: 3,
   },
   notesText: {
     fontSize: 14,
-    color: '#333',
+    color: '#5A4A1A',
+    lineHeight: 20,
   },
-  wearStats: {
-    marginBottom: 8,
-  },
-  wearStatsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  wearStatsCount: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
+  calendarSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    marginBottom: 16,
+    overflow: 'hidden',
+    shadowColor: '#1A1F36',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
   },
   wearButton: {
-    backgroundColor: '#4a6fa5',
-    paddingVertical: 14,
-    borderRadius: 12,
+    backgroundColor: '#2C3E6B',
+    paddingVertical: 16,
+    borderRadius: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
+    gap: 8,
     marginBottom: 24,
+    shadowColor: '#2C3E6B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  wearButtonIcon: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
   wearButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   recommendSection: {
     marginBottom: 24,
   },
   recommendTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#1A1F36',
+    marginBottom: 14,
+    letterSpacing: -0.4,
   },
   recommendCard: {
     marginRight: 12,
@@ -279,27 +415,29 @@ const styles = StyleSheet.create({
   },
   recommendImage: {
     width: 100,
-    height: 120,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    height: 126,
+    borderRadius: 16,
+    backgroundColor: '#F0EEE9',
   },
   recommendName: {
     fontSize: 12,
-    color: '#666',
-    marginTop: 6,
+    color: '#6B6F8E',
+    marginTop: 7,
     textAlign: 'center',
+    fontWeight: '600',
   },
   deleteButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#ff4d4f',
+    paddingVertical: 16,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#FFCDD2',
     alignItems: 'center',
     marginBottom: 40,
+    backgroundColor: '#FFF5F5',
   },
   deleteButtonText: {
-    color: '#ff4d4f',
-    fontSize: 16,
-    fontWeight: '500',
+    color: '#E85C6A',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
