@@ -3,6 +3,7 @@
 const CLOTHES_KEY = '@mywardrobe_clothes';
 const OUTFITS_KEY = '@mywardrobe_outfits';
 const CATEGORIES_KEY = '@mywardrobe_categories';
+const OUTFIT_CATEGORIES_KEY = '@mywardrobe_outfit_categories';
 
 export async function loadClothes() {
   try {
@@ -60,6 +61,26 @@ export async function saveCategories(categories) {
     return { ok: true };
   } catch (e) {
     console.error('Failed to save categories:', e);
+    return { ok: false, error: e };
+  }
+}
+
+export async function loadOutfitCategories() {
+  try {
+    const json = await AsyncStorage.getItem(OUTFIT_CATEGORIES_KEY);
+    return json ? JSON.parse(json) : null;
+  } catch (e) {
+    console.error('Failed to load outfit categories:', e);
+    return null;
+  }
+}
+
+export async function saveOutfitCategories(categories) {
+  try {
+    await AsyncStorage.setItem(OUTFIT_CATEGORIES_KEY, JSON.stringify(categories));
+    return { ok: true };
+  } catch (e) {
+    console.error('Failed to save outfit categories:', e);
     return { ok: false, error: e };
   }
 }

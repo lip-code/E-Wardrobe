@@ -17,9 +17,9 @@ import ClothCard from '../components/ClothCard';
 import CategoryTabs from '../components/CategoryTabs';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_MARGIN = 10;
-const CARD_WIDTH = (SCREEN_WIDTH - CARD_MARGIN * 3 - 16) / 2;
-const ITEM_HEIGHT = CARD_WIDTH * 1.25 + 65;
+const CARD_GAP = 6;
+const CARD_WIDTH = (SCREEN_WIDTH - 16 - CARD_GAP * 2) / 3;
+const ITEM_HEIGHT = CARD_WIDTH * 4 / 3 + CARD_GAP;
 
 export default function HomeScreen({ navigation }) {
   const { state, dispatch } = useWardrobe();
@@ -57,7 +57,7 @@ export default function HomeScreen({ navigation }) {
   const getItemLayout = useCallback(
     (_, index) => ({
       length: ITEM_HEIGHT,
-      offset: ITEM_HEIGHT * Math.floor(index / 2),
+      offset: ITEM_HEIGHT * Math.floor(index / 3),
       index,
     }),
     []
@@ -77,38 +77,23 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FAF9F6" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.headerTitle}>我的衣橱</Text>
-            <Text style={styles.headerSubtitle}>
-              {state.clothes.length > 0
-                ? `共 ${state.clothes.length} 件单品`
-                : '开始整理你的穿搭'}
-            </Text>
-          </View>
-          <View style={styles.headerDecor}>
-            <Text style={styles.headerEmoji}>👗</Text>
-          </View>
-        </View>
-      </View>
-
       {/* Category tabs */}
       {!isEmpty && (
-        <CategoryTabs
-          selected={selectedCategory}
-          onSelect={setSelectedCategory}
-          customCategories={state.customCategories}
-          onAdd={handleAddCategory}
-        />
+        <View style={styles.header}>
+          <CategoryTabs
+            selected={selectedCategory}
+            onSelect={setSelectedCategory}
+            customCategories={state.customCategories}
+            onAdd={handleAddCategory}
+          />
+        </View>
       )}
 
       {/* Cloth list */}
       <FlatList
         data={filteredClothes}
         keyExtractor={keyExtractor}
-        numColumns={2}
+        numColumns={3}
         columnWrapperStyle={styles.row}
         contentContainerStyle={[styles.list, isEmpty && styles.emptyList]}
         getItemLayout={getItemLayout}
@@ -139,6 +124,15 @@ export default function HomeScreen({ navigation }) {
           )
         }
       />
+
+      {/* Floating add button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation.navigate('AddCloth')}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.fabText}>+ 添加</Text>
+      </TouchableOpacity>
 
       {/* Add Category Modal */}
       <Modal
@@ -189,46 +183,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAF9F6',
   },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingTop: 52,
+    paddingHorizontal: 16,
+    paddingBottom: 4,
     backgroundColor: '#FAF9F6',
   },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1A1F36',
-    letterSpacing: -0.8,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: '#9B9EB5',
-    marginTop: 3,
-    fontWeight: '500',
-  },
-  headerDecor: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: '#EEF0FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerEmoji: {
-    fontSize: 22,
-  },
   row: {
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingHorizontal: 8,
+    gap: CARD_GAP,
   },
   list: {
     paddingHorizontal: 8,
-    paddingTop: 8,
+    paddingTop: 4,
     paddingBottom: 110,
   },
   emptyList: {
@@ -296,6 +263,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9B9EB5',
     fontWeight: '500',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 28,
+    right: 20,
+    paddingHorizontal: 22,
+    height: 50,
+    borderRadius: 18,
+    backgroundColor: '#1A1F36',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1A1F36',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  fabText: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   modalOverlay: {
     flex: 1,

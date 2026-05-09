@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,169 +7,106 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Modal,
+  TextInput,
+  Animated,
+  Pressable,
+  Dimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
-import PropTypes from 'prop-types';
-import * as Crypto from 'expo-crypto';
 import { useWardrobe } from '../store/WardrobeContext';
 import { ActionTypes } from '../store/wardrobeReducer';
 import { OUTFIT_TYPES } from '../utils/mockData';
 
-const OutfitCard = React.memo(function OutfitCard({
-  outfit,
-  clothes,
-  onPress,
-  onSetToday,
-  onEdit,
-  onCopy,
-  onDelete,
-}) {
-  const clothesList = outfit.clothIds
-    .map((id) => clothes.find((c) => c.id === id))
-    .filter(Boolean);
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_GAP = 6;
+const CARD_WIDTH = (SCREEN_WIDTH - 16 - CARD_GAP * 2) / 3;
+
+const blurhash =
+  '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
+
+function OutfitCard({ outfit, onPress }) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.94,
+      useNativeDriver: true,
+      speed: 60,
+      bounciness: 3,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 6,
+    }).start();
+  };
+
+  const coverUri = outfit.coverImageUri;
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={onPress}
-      activeOpacity={0.85}
-    >
-      {/* Header */}
-      <View style={styles.cardHeader}>
-        <View style={styles.cardHeaderLeft}>
-          {outfit.isTodayOutfit && (
-            <View style={styles.todayBadge}>
-              <Text style={styles.todayText}>今日穿搭</Text>
-            </View>
-          )}
-          <Text style={styles.cardName} numberOfLines={1}>
-            {outfit.name}
-          </Text>
-          <Text style={styles.cardMeta}>
-            {outfit.clothIds.length} 件单品 · {outfit.date}
-            {outfit.type ? ` · ${outfit.type}` : ''}
-          </Text>
-        </View>
-        <View style={styles.clothCount}>
-          <Text style={styles.clothCountText}>{outfit.clothIds.length}</Text>
-        </View>
-      </View>
-
-      {/* Images strip */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.imageStrip}
-        contentContainerStyle={styles.imageStripContent}
-      >
-        {clothesList.map((cloth) => (
+    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={onPress}>
+      <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }] }]}>
+        {coverUri ? (
           <Image
-            key={cloth.id}
-            source={{ uri: cloth.imageUri }}
-            style={styles.thumb}
+            source={{ uri: coverUri }}
+            style={styles.cardImage}
+            placeholder={{ blurhash }}
             contentFit="cover"
-            transition={150}
+            transition={300}
           />
-        ))}
-        {clothesList.length === 0 && (
-          <View style={styles.emptyThumb}>
-            <Text style={styles.emptyThumbText}>无图片</Text>
+        ) : (
+          <View style={[styles.cardImage, styles.cardImageEmpty]}>
+            <Text style={styles.cardImageEmptyText}>👗</Text>
           </View>
         )}
-      </ScrollView>
-
-      {/* Actions */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.actionBtn, outfit.isTodayOutfit && styles.actionBtnActive]}
-          onPress={onSetToday}
-        >
-          <Text style={[styles.actionBtnText, outfit.isTodayOutfit && styles.actionBtnTextActive]}>
-            {outfit.isTodayOutfit ? '✓ 今日' : '今日'}
-          </Text>
-        </TouchableOpacity>
-        <View style={styles.actionDivider} />
-        <TouchableOpacity style={styles.actionBtn} onPress={onEdit}>
-          <Text style={styles.actionBtnText}>修改</Text>
-        </TouchableOpacity>
-        <View style={styles.actionDivider} />
-        <TouchableOpacity style={styles.actionBtn} onPress={onCopy}>
-          <Text style={styles.actionBtnText}>复制</Text>
-        </TouchableOpacity>
-        <View style={styles.actionDivider} />
-        <TouchableOpacity style={styles.actionBtn} onPress={onDelete}>
-          <Text style={[styles.actionBtnText, styles.deleteBtnText]}>删除</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+        {outfit.isTodayOutfit && (
+          <View style={styles.todayDot} />
+        )}
+      </Animated.View>
+    </Pressable>
   );
-});
-
-OutfitCard.propTypes = {
-  outfit: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    clothIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-    date: PropTypes.string.isRequired,
-    isTodayOutfit: PropTypes.bool.isRequired,
-    type: PropTypes.string,
-  }).isRequired,
-  clothes: PropTypes.array.isRequired,
-  onPress: PropTypes.func.isRequired,
-  onSetToday: PropTypes.func.isRequired,
-  onEdit: PropTypes.func.isRequired,
-  onCopy: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-};
+}
 
 export default function OutfitListScreen({ navigation }) {
   const { state, dispatch } = useWardrobe();
   const [activeType, setActiveType] = useState('全部');
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const hasEnoughClothes = state.clothes.length >= 2;
+
+  const allOutfitTypes = useMemo(
+    () => ['全部', ...OUTFIT_TYPES, ...state.customOutfitCategories],
+    [state.customOutfitCategories]
+  );
 
   const filteredOutfits = useMemo(() => {
     if (activeType === '全部') return state.outfits;
     return state.outfits.filter((o) => o.type === activeType);
   }, [state.outfits, activeType]);
 
-  const handleSetToday = useCallback(
-    (outfitId) => {
-      dispatch({ type: ActionTypes.SET_TODAY_OUTFIT, payload: outfitId });
-      Alert.alert('✅', '已设为今日穿搭');
-    },
-    [dispatch]
-  );
+  const handleAddCategory = useCallback(() => {
+    setShowAddCategory(true);
+    setNewCategoryName('');
+  }, []);
 
-  const handleDelete = useCallback(
-    (outfitId, outfitName) => {
-      Alert.alert('确认删除', `确定要删除「${outfitName}」吗？`, [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '删除',
-          style: 'destructive',
-          onPress: () =>
-            dispatch({ type: ActionTypes.DELETE_OUTFIT, payload: outfitId }),
-        },
-      ]);
-    },
-    [dispatch]
-  );
-
-  const handleCopy = useCallback(
-    (outfit) => {
-      const newOutfit = {
-        ...outfit,
-        id: 'o' + Crypto.randomUUID(),
-        name: outfit.name + '（副本）',
-        date: new Date().toISOString().split('T')[0],
-        isTodayOutfit: false,
-      };
-      dispatch({ type: ActionTypes.ADD_OUTFIT, payload: newOutfit });
-      Alert.alert('✅', '搭配已复制');
-    },
-    [dispatch]
-  );
+  const handleConfirmAddCategory = useCallback(() => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    if (allOutfitTypes.includes(name)) {
+      Alert.alert('提示', '该分类已存在');
+      return;
+    }
+    dispatch({ type: ActionTypes.ADD_OUTFIT_CATEGORY, payload: name });
+    setActiveType(name);
+    setShowAddCategory(false);
+    setNewCategoryName('');
+  }, [newCategoryName, allOutfitTypes, dispatch]);
 
   const keyExtractor = useCallback((item) => item.id, []);
 
@@ -177,33 +114,18 @@ export default function OutfitListScreen({ navigation }) {
     ({ item }) => (
       <OutfitCard
         outfit={item}
-        clothes={state.clothes}
         onPress={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
-        onSetToday={() => handleSetToday(item.id)}
-        onEdit={() => navigation.navigate('CreateOutfit', { outfitId: item.id })}
-        onCopy={() => handleCopy(item)}
-        onDelete={() => handleDelete(item.id, item.name)}
       />
     ),
-    [state.clothes, navigation, handleSetToday, handleDelete, handleCopy]
+    [navigation]
   );
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>我的搭配</Text>
-        <Text style={styles.headerSubtitle}>
-          {state.outfits.length > 0
-            ? `共 ${state.outfits.length} 套方案`
-            : '创建你的第一套搭配'}
-        </Text>
-      </View>
-
       {/* Type filter tabs */}
-      <View style={styles.typeFilter}>
+      <View style={styles.header}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeFilterRow}>
-          {['全部', ...OUTFIT_TYPES].map((t) => (
+          {allOutfitTypes.map((t) => (
             <TouchableOpacity
               key={t}
               style={[styles.typeFilterChip, activeType === t && styles.activeTypeFilterChip]}
@@ -214,6 +136,13 @@ export default function OutfitListScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
           ))}
+          <TouchableOpacity
+            style={styles.addCategoryChip}
+            onPress={handleAddCategory}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.addCategoryText}>+ 新建</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 
@@ -229,6 +158,8 @@ export default function OutfitListScreen({ navigation }) {
       <FlatList
         data={filteredOutfits}
         keyExtractor={keyExtractor}
+        numColumns={3}
+        columnWrapperStyle={styles.row}
         contentContainerStyle={styles.list}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
@@ -253,9 +184,49 @@ export default function OutfitListScreen({ navigation }) {
           onPress={() => navigation.navigate('CreateOutfit')}
           activeOpacity={0.85}
         >
-          <Text style={styles.fabText}>+ 创建搭配</Text>
+          <Text style={styles.fabText}>+ 添加</Text>
         </TouchableOpacity>
       )}
+
+      {/* Add Category Modal */}
+      <Modal
+        visible={showAddCategory}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddCategory(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowAddCategory(false)}
+        >
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>新建搭配分类</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newCategoryName}
+              onChangeText={setNewCategoryName}
+              placeholder="输入分类名称，如：约会、旅行"
+              placeholderTextColor="#BABDD0"
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setShowAddCategory(false)}
+              >
+                <Text style={styles.modalCancelText}>取消</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirm}
+                onPress={handleConfirmAddCategory}
+              >
+                <Text style={styles.modalConfirmText}>确定</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -266,48 +237,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAF9F6',
   },
   header: {
-    paddingTop: 64,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1A1F36',
-    letterSpacing: -0.8,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: '#9B9EB5',
-    marginTop: 3,
-    fontWeight: '500',
-  },
-  typeFilter: {
-    paddingVertical: 8,
+    paddingTop: 52,
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#e8e8e8',
+    paddingBottom: 4,
+    backgroundColor: '#FAF9F6',
   },
   typeFilterRow: {
-    gap: 8,
+    paddingVertical: 6,
+    gap: 6,
   },
   typeFilterChip: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 13,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#EEEFF6',
   },
   activeTypeFilterChip: {
-    backgroundColor: '#333',
+    backgroundColor: '#2C3E6B',
   },
   typeFilterText: {
-    fontSize: 13,
-    color: '#666',
+    fontSize: 12,
+    color: '#9B9EB5',
+    fontWeight: '600',
   },
   activeTypeFilterText: {
     color: '#fff',
-    fontWeight: '500',
+    fontWeight: '700',
   },
   fab: {
     position: 'absolute',
@@ -354,124 +309,43 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
   },
+  row: {
+    justifyContent: 'flex-start',
+    paddingHorizontal: 8,
+    gap: CARD_GAP,
+  },
   list: {
-    padding: 16,
+    paddingHorizontal: 8,
+    paddingTop: 4,
     paddingBottom: 110,
-    gap: 14,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    width: CARD_WIDTH,
+    borderRadius: 14,
+    marginBottom: CARD_GAP,
     overflow: 'hidden',
-    shadowColor: '#1A1F36',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    padding: 18,
-    paddingBottom: 12,
+  cardImage: {
+    width: '100%',
+    aspectRatio: 3 / 4,
+    backgroundColor: '#F5F3F0',
   },
-  cardHeaderLeft: {
-    flex: 1,
-    marginRight: 12,
+  cardImageEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EEEFF6',
   },
-  todayBadge: {
+  cardImageEmptyText: {
+    fontSize: 28,
+  },
+  todayDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#E8734A',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-  },
-  todayText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  cardName: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#1A1F36',
-    letterSpacing: -0.4,
-    marginBottom: 4,
-  },
-  cardMeta: {
-    fontSize: 12,
-    color: '#9B9EB5',
-    fontWeight: '500',
-  },
-  clothCount: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#EEF0FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  clothCountText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#4A6FE8',
-  },
-  imageStrip: {
-    marginBottom: 0,
-  },
-  imageStripContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    gap: 8,
-  },
-  thumb: {
-    width: 70,
-    height: 88,
-    borderRadius: 14,
-    backgroundColor: '#F0EEE9',
-  },
-  emptyThumb: {
-    width: 70,
-    height: 88,
-    borderRadius: 14,
-    backgroundColor: '#F5F6FA',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyThumbText: {
-    fontSize: 11,
-    color: '#9B9EB5',
-  },
-  actions: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#F5F6FA',
-  },
-  actionBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 13,
-  },
-  actionBtnActive: {
-    backgroundColor: '#F0F4FF',
-  },
-  actionBtnText: {
-    fontSize: 13,
-    color: '#4A6FE8',
-    fontWeight: '600',
-  },
-  actionBtnTextActive: {
-    color: '#2C3E6B',
-    fontWeight: '700',
-  },
-  actionDivider: {
-    width: 1,
-    backgroundColor: '#F5F6FA',
-  },
-  deleteBtnText: {
-    color: '#E85C6A',
   },
   empty: {
     alignItems: 'center',
@@ -503,5 +377,79 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     fontWeight: '500',
+  },
+  addCategoryChip: {
+    paddingHorizontal: 13,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#D8DBF0',
+    borderStyle: 'dashed',
+  },
+  addCategoryText: {
+    fontSize: 12,
+    color: '#9B9EB5',
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(26, 31, 54, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 28,
+    width: '82%',
+    shadowColor: '#1A1F36',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.2,
+    shadowRadius: 40,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1A1F36',
+    marginBottom: 18,
+    letterSpacing: -0.4,
+  },
+  modalInput: {
+    borderWidth: 1.5,
+    borderColor: '#E8EAF4',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#1A1F36',
+    marginBottom: 20,
+    backgroundColor: '#FAFBFF',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  modalCancel: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#F4F5F9',
+  },
+  modalCancelText: {
+    fontSize: 14,
+    color: '#9B9EB5',
+    fontWeight: '600',
+  },
+  modalConfirm: {
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#2C3E6B',
+  },
+  modalConfirmText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '700',
   },
 });

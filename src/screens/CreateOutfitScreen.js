@@ -44,6 +44,11 @@ export default function CreateOutfitScreen({ route, navigation }) {
     [state.customCategories]
   );
 
+  const allOutfitTypes = useMemo(
+    () => [...OUTFIT_TYPES, ...state.customOutfitCategories],
+    [state.customOutfitCategories]
+  );
+
   const toggleSelect = (clothId) => {
     setSelectedIds((prev) =>
       prev.includes(clothId)
@@ -81,6 +86,8 @@ export default function CreateOutfitScreen({ route, navigation }) {
       return;
     }
 
+    const firstCloth = state.clothes.find((c) => c.id === selectedIds[0]);
+
     if (isEdit) {
       dispatch({
         type: ActionTypes.UPDATE_OUTFIT,
@@ -102,6 +109,7 @@ export default function CreateOutfitScreen({ route, navigation }) {
         date: new Date().toISOString().split('T')[0],
         isTodayOutfit: false,
         type: outfitType,
+        coverImageUri: firstCloth?.imageUri || '',
       };
       dispatch({ type: ActionTypes.ADD_OUTFIT, payload: newOutfit });
       Alert.alert('成功', '搭配已创建！', [
@@ -139,7 +147,7 @@ export default function CreateOutfitScreen({ route, navigation }) {
       {/* Type selector */}
       <View style={styles.typeSection}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeRow}>
-          {OUTFIT_TYPES.map((t) => (
+          {allOutfitTypes.map((t) => (
             <TouchableOpacity
               key={t}
               style={[styles.typeChip, outfitType === t && styles.activeTypeChip]}

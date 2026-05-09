@@ -12,7 +12,6 @@ import OutfitDetailScreen from '../screens/OutfitDetailScreen';
 import CreateOutfitScreen from '../screens/CreateOutfitScreen';
 import StatsScreen from '../screens/StatsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import FloatingButton from '../components/FloatingButton';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -63,10 +62,9 @@ function OutfitStack() {
   );
 }
 
-function MainTabs({ navigation }) {
+function MainTabs() {
   return (
-    <>
-      <Tab.Navigator
+    <Tab.Navigator
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: true,
@@ -121,14 +119,6 @@ function MainTabs({ navigation }) {
           }}
         />
         <Tab.Screen
-          name="addPlaceholder"
-          component={View}
-          options={{
-            tabBarButton: () => null,
-            tabBarLabel: () => null,
-          }}
-        />
-        <Tab.Screen
           name="统计"
           component={StatsScreen}
           options={{
@@ -147,8 +137,6 @@ function MainTabs({ navigation }) {
           }}
         />
       </Tab.Navigator>
-      <FloatingButton onPress={() => navigation.navigate('AddCloth')} />
-    </>
   );
 }
 

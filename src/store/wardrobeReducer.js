@@ -4,6 +4,7 @@ export const initialState = {
   clothes: MOCK_CLOTHES,
   outfits: MOCK_OUTFITS,
   customCategories: [],
+  customOutfitCategories: [],
   isBootstrapping: true,
   isSaving: false,
 };
@@ -24,6 +25,8 @@ export const ActionTypes = {
   SET_SAVING: 'SET_SAVING',
   ADD_CATEGORY: 'ADD_CATEGORY',
   SET_CUSTOM_CATEGORIES: 'SET_CUSTOM_CATEGORIES',
+  ADD_OUTFIT_CATEGORY: 'ADD_OUTFIT_CATEGORY',
+  SET_CUSTOM_OUTFIT_CATEGORIES: 'SET_CUSTOM_OUTFIT_CATEGORIES',
 };
 
 export function wardrobeReducer(state, action) {
@@ -115,6 +118,12 @@ export function wardrobeReducer(state, action) {
 
     case ActionTypes.SET_CUSTOM_CATEGORIES:
       return { ...state, customCategories: action.payload };
+
+    case ActionTypes.ADD_OUTFIT_CATEGORY:
+      return { ...state, customOutfitCategories: [...state.customOutfitCategories, action.payload] };
+
+    case ActionTypes.SET_CUSTOM_OUTFIT_CATEGORIES:
+      return { ...state, customOutfitCategories: action.payload };
 
     default:
       return state;

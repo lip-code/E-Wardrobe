@@ -1,6 +1,6 @@
 ﻿import React, { createContext, useContext, useReducer, useEffect, useMemo, Alert } from 'react';
 import { wardrobeReducer, initialState, ActionTypes } from './wardrobeReducer';
-import { saveClothes, saveOutfits, loadClothes, loadOutfits, loadCategories, saveCategories } from '../utils/storage';
+import { saveClothes, saveOutfits, loadClothes, loadOutfits, loadCategories, saveCategories, loadOutfitCategories, saveOutfitCategories } from '../utils/storage';
 
 const WardrobeContext = createContext(null);
 
@@ -13,6 +13,7 @@ export function WardrobeProvider({ children }) {
       const savedClothes = await loadClothes();
       const savedOutfits = await loadOutfits();
       const savedCategories = await loadCategories();
+      const savedOutfitCategories = await loadOutfitCategories();
       if (savedClothes) {
         dispatch({ type: ActionTypes.SET_CLOTHES, payload: savedClothes });
       }
@@ -21,6 +22,9 @@ export function WardrobeProvider({ children }) {
       }
       if (savedCategories) {
         dispatch({ type: ActionTypes.SET_CUSTOM_CATEGORIES, payload: savedCategories });
+      }
+      if (savedOutfitCategories) {
+        dispatch({ type: ActionTypes.SET_CUSTOM_OUTFIT_CATEGORIES, payload: savedOutfitCategories });
       }
       dispatch({ type: ActionTypes.SET_BOOTSTRAPPING, payload: false });
     }
@@ -60,6 +64,16 @@ export function WardrobeProvider({ children }) {
       }
     });
   }, [state.customCategories, state.isBootstrapping]);
+
+  // Persist custom outfit categories when they change (skip during bootstrap)
+  useEffect(() => {
+    if (state.isBootstrapping) return;
+    saveOutfitCategories(state.customOutfitCategories).then((res) => {
+      if (res && !res.ok) {
+        Alert.alert('保存失败', '搭配分类数据存储异常，请稍后重试');
+      }
+    });
+  }, [state.customOutfitCategories, state.isBootstrapping]);
 
   // Stable value reference to avoid unnecessary consumer re-renders
   const value = useMemo(() => ({ state, dispatch }), [state, dispatch]);

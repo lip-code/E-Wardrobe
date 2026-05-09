@@ -70,11 +70,14 @@ export default function ClothDetailScreen({ route, navigation }) {
     ]);
   };
 
+  const sceneText = (cloth.scenes || (cloth.scene ? [cloth.scene] : [])).join('、');
+  const seasonText = (cloth.seasons || (cloth.season ? [cloth.season] : [])).join('、');
+
   const infoItems = [
     { label: '分类', value: cloth.category },
     { label: '颜色', value: cloth.color },
-    { label: '场景', value: cloth.scene },
-    { label: '季节', value: cloth.season },
+    sceneText && { label: '场景', value: sceneText },
+    seasonText && { label: '季节', value: seasonText },
     cloth.brand && { label: '品牌', value: cloth.brand },
     cloth.material && { label: '材质', value: cloth.material },
     cloth.price && { label: '价格', value: `¥${cloth.price}` },

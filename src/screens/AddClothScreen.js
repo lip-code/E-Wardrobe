@@ -29,8 +29,8 @@ export default function AddClothScreen({ route, navigation }) {
   const [name, setName] = useState(editingCloth?.name || '');
   const [category, setCategory] = useState(editingCloth?.category || '上衣');
   const [color, setColor] = useState(editingCloth?.color || '白色');
-  const [season, setSeason] = useState(editingCloth?.season || '四季');
-  const [scene, setScene] = useState(editingCloth?.scene || '休闲');
+  const [seasons, setSeasons] = useState(editingCloth?.seasons || (editingCloth?.season ? [editingCloth.season] : ['四季']));
+  const [scenes, setScenes] = useState(editingCloth?.scenes || (editingCloth?.scene ? [editingCloth.scene] : ['休闲']));
   const [imageUri, setImageUri] = useState(editingCloth?.imageUri || null);
   const [brand, setBrand] = useState(editingCloth?.brand || '');
   const [price, setPrice] = useState(editingCloth?.price != null ? String(editingCloth.price) : '');
@@ -38,6 +38,18 @@ export default function AddClothScreen({ route, navigation }) {
   const [notes, setNotes] = useState(editingCloth?.notes || '');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+
+  const toggleSeason = (s) => {
+    setSeasons((prev) =>
+      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+    );
+  };
+
+  const toggleScene = (s) => {
+    setScenes((prev) =>
+      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+    );
+  };
 
   const handleConfirmAddCategory = () => {
     const name = newCategoryName.trim();
@@ -63,7 +75,6 @@ export default function AddClothScreen({ route, navigation }) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [3, 4],
       quality: 0.8,
     });
 
@@ -81,7 +92,6 @@ export default function AddClothScreen({ route, navigation }) {
 
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
-      aspect: [3, 4],
       quality: 0.8,
     });
 
@@ -108,8 +118,8 @@ export default function AddClothScreen({ route, navigation }) {
           name: name.trim() || category,
           category,
           color,
-          scene,
-          season,
+          scenes,
+          seasons,
           imageUri,
           brand: brand.trim() || undefined,
           price: price ? Number(price) : undefined,
@@ -126,8 +136,8 @@ export default function AddClothScreen({ route, navigation }) {
         name: name.trim() || category,
         category,
         color,
-        scene,
-        season,
+        scenes,
+        seasons,
         imageUri,
         brand: brand.trim() || undefined,
         purchaseDate: new Date().toISOString().split('T')[0],
@@ -258,21 +268,21 @@ export default function AddClothScreen({ route, navigation }) {
 
       {/* Season */}
       <View style={styles.field}>
-        <Text style={styles.label}>季节</Text>
+        <Text style={styles.label}>季节（可多选）</Text>
         <View style={styles.optionsRow}>
           {SEASONS.map((s) => (
             <TouchableOpacity
               key={s}
               style={[
                 styles.optionButton,
-                season === s && styles.activeOption,
+                seasons.includes(s) && styles.activeOption,
               ]}
-              onPress={() => setSeason(s)}
+              onPress={() => toggleSeason(s)}
             >
               <Text
                 style={[
                   styles.optionText,
-                  season === s && styles.activeOptionText,
+                  seasons.includes(s) && styles.activeOptionText,
                 ]}
               >
                 {s}
@@ -284,21 +294,21 @@ export default function AddClothScreen({ route, navigation }) {
 
       {/* Scene */}
       <View style={styles.field}>
-        <Text style={styles.label}>场景</Text>
+        <Text style={styles.label}>场景（可多选）</Text>
         <View style={styles.optionsRow}>
           {SCENES.map((s) => (
             <TouchableOpacity
               key={s}
               style={[
                 styles.optionButton,
-                scene === s && styles.activeOption,
+                scenes.includes(s) && styles.activeOption,
               ]}
-              onPress={() => setScene(s)}
+              onPress={() => toggleScene(s)}
             >
               <Text
                 style={[
                   styles.optionText,
-                  scene === s && styles.activeOptionText,
+                  scenes.includes(s) && styles.activeOptionText,
                 ]}
               >
                 {s}
