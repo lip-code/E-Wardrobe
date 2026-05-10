@@ -12,7 +12,7 @@ import PropTypes from 'prop-types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_GAP = 6;
-const CARD_WIDTH = (SCREEN_WIDTH - 16 - CARD_GAP * 2) / 3;
+const CARD_WIDTH = (SCREEN_WIDTH - 16 - CARD_GAP * 3) / 4;
 
 const blurhash =
   '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';

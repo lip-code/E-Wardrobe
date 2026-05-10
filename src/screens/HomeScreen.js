@@ -18,7 +18,7 @@ import CategoryTabs from '../components/CategoryTabs';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_GAP = 6;
-const CARD_WIDTH = (SCREEN_WIDTH - 16 - CARD_GAP * 2) / 3;
+const CARD_WIDTH = (SCREEN_WIDTH - 16 - CARD_GAP * 3) / 4;
 const ITEM_HEIGHT = CARD_WIDTH * 4 / 3 + CARD_GAP;
 
 export default function HomeScreen({ navigation }) {
@@ -57,7 +57,7 @@ export default function HomeScreen({ navigation }) {
   const getItemLayout = useCallback(
     (_, index) => ({
       length: ITEM_HEIGHT,
-      offset: ITEM_HEIGHT * Math.floor(index / 3),
+      offset: ITEM_HEIGHT * Math.floor(index / 4),
       index,
     }),
     []
@@ -93,7 +93,7 @@ export default function HomeScreen({ navigation }) {
       <FlatList
         data={filteredClothes}
         keyExtractor={keyExtractor}
-        numColumns={3}
+        numColumns={4}
         columnWrapperStyle={styles.row}
         contentContainerStyle={[styles.list, isEmpty && styles.emptyList]}
         getItemLayout={getItemLayout}
